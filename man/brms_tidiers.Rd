@@ -9,7 +9,8 @@
 \usage{
 \method{tidy}{brmsfit}(x, parameters = NA, effects = c("fixed",
   "ran_pars"), robust = FALSE, conf.int = TRUE, conf.level = 0.95,
-  conf.method = c("quantile", "HPDinterval"), ...)
+  conf.method = c("quantile", "HPDinterval"), fix.intercept = TRUE,
+  ...)
 
 \method{glance}{brmsfit}(x, looic = FALSE, ...)
 
@@ -43,6 +44,9 @@ Only used if \code{conf.int = TRUE}.}
 
 \item{conf.method}{method for computing confidence intervals
 ("quantile" or "HPDinterval")}
+
+\item{fix.intercept}{rename "Intercept" parameter to "(Intercept)", to match
+behaviour of other model types?}
 
 \item{...}{Extra arguments, not used}
 
@@ -98,27 +102,28 @@ are used for compatibility with other (frequentist) mixed model types.
 \examples{
  ## original model
  \dontrun{
-    fit <- brm(mpg ~ wt + (1|cyl) + (1+wt|gear), data = mtcars,
+    brms_crossedRE <- brm(mpg ~ wt + (1|cyl) + (1+wt|gear), data = mtcars,
            iter = 500, chains = 2)
  }
- ## load stored object
- fit <- readRDS(system.file("extdata", "brms_example.rds", package="broom.mixed"))
  if (require("brms")) {
+   ## load stored object
+   load(system.file("extdata", "brms_example.rda", package="broom.mixed"))
+
+   fit <- brms_crossedRE
    tidy(fit)
    tidy(fit, parameters = "^sd_", conf.int = FALSE)
-   tidy(fit, effects = "fixed")
+   tidy(fit, effects = "fixed", conf.method="HPDinterval")
    tidy(fit, effects = "ran_vals")
    tidy(fit, effects = "ran_pars", robust = TRUE)
-
+   # glance method
+   glance(fit)
+   ## this example will give a warning that it should be run with
+   ## reloo=TRUE; however, doing this will fail
+   ## because the \\code{fit} object has been stripped down to save space
+   suppressWarnings(glance(fit, looic = TRUE, cores = 1))
+   head(augment(fit))
 }
 
-# glance method
-glance(fit)
-## this example will give a warning that it should be run with
-## reloo=TRUE; however, doing this will fail
-## because the \\code{fit} object has been stripped down to save space
-suppressWarnings(glance(fit, looic = TRUE, cores = 1))
-head(augment(fit))
 }
 \seealso{
 \code{\link[brms]{brms}}, \code{\link[brms]{brmsfit-class}}

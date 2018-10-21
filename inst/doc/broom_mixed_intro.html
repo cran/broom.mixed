@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Ben Bolker" />
+
+<meta name="date" content="2018-10-21" />
+
+<title>Introduction to broom.mixed</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Introduction to <code>broom.mixed</code></h1>
+<h4 class="author"><em>Ben Bolker</em></h4>
+<h4 class="date"><em>2018-10-21</em></h4>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p><strong>UNDER CONSTRUCTION</strong></p>
+<p><code>broom.mixed</code> is a spinoff of the <a href="https://CRAN.R-project.org/package=broom">broom package</a>. The goal of <code>broom</code> is to bring the modeling process into a “tidy”(TM) workflow, in particular by providing standardized verbs that provide information on</p>
+<ul>
+<li><code>tidy</code>: estimates, standard errors, confidence intervals, etc.</li>
+<li><code>augment</code>: residuals, fitted values, influence measures, etc.</li>
+<li><code>glance</code>: whole-model summaries: AIC, R-squared, etc.</li>
+</ul>
+<p><code>broom.mixed</code> aims to provide these methods for as many packages and model types in the R ecosystem as possible. These methods have been separated from those in the main <code>broom</code> package because there are issues that need to be dealt with for these models (e.g. different types of parameters: fixed, random-effects parameters, conditional modes/BLUPs of random effects, etc.) that are not especially relevant to the broader universe of models that <code>broom</code> deals with.</p>
+</div>
+<div id="mixed-model-specific-issues" class="section level1">
+<h1>Mixed-model-specific issues</h1>
+<div id="terminology" class="section level2">
+<h2>Terminology</h2>
+<ul>
+<li>the upper-level parameters that describe the distribution of random variables (variance, covariance, precision, standard deviation, or correlation) are called <em>random-effect parameters</em> (<code>ran_pars</code> in the <code>effects</code> argument when tidying)</li>
+<li>the values that describe the deviation of the observations in a group level from the population-level effect (which could be posterior means or medians, conditional modes, or BLUPs depending on the model) are called <em>random-effect values</em> (<code>ran_vals</code> in the <code>effects</code> argument when tidying)</li>
+<li>the parameters that describe the population-level effects of (categorical and continuous) predictor variables are called <em>fixed effects</em> (<code>fixed</code> in the <code>effects</code> argument when tidying)</li>
+<li>the categorical variable (factor) that identifies which group or cluster an observation belongs to is called a <em>grouping variable</em> (<code>group</code> column in <code>tidy()</code> output)</li>
+<li>the particular level of a factor that specifies which level of the grouping variable an observation belongs to is called a <em>group level</em> (<code>level</code> column in <code>tidy()</code> output)</li>
+<li>the categorical or continuous predictor variables that control the expected value (i.e., enter into the linear predictor for some part of the model) are called <em>terms</em> (<code>term</code> column in <code>tidy()</code> output); note that unlike in base <code>broom</code>, <strong>the term column may have duplicated values</strong>, because the same term may enter multiple model components (e.g. zero-inflated and conditional models; models for more than one response; fixed effects and random effects)</li>
+</ul>
+</div>
+<div id="time-consuming-computations" class="section level2">
+<h2>Time-consuming computations</h2>
+<p>Some kinds of computations needed for mixed model summaries are computationally expensive, e.g. likelihood profiles or parametric bootstrapping. In this case <code>broom.mixed</code> may offer an option for passing a pre-computed object to <code>tidy()</code>, eg. the <code>profile</code> argument in the <code>tidy.merMod</code> (<code>lmer</code>/<code>glmer</code>) method.</p>
+</div>
+</div>
+<div id="related-packages" class="section level1">
+<h1>Related packages</h1>
+<p>There are many, many things one might want to do with a fitted model, and <code>broom.mixed</code> can only do a few of them.</p>
+<ul>
+<li><code>emmeans</code></li>
+<li><code>multcomp</code></li>
+<li><code>car</code></li>
+<li><code>afex</code></li>
+<li><code>sjStats</code>/<code>sjPlots</code></li>
+<li><code>rockchalk</code></li>
+</ul>
+<div id="huxtable-broom.mixed" class="section level2">
+<h2>huxtable + broom.mixed</h2>
+</div>
+<div id="dotwhisker-broom.mixed" class="section level2">
+<h2>dotwhisker + broom.mixed</h2>
+<p><code>dotwhisker</code> is a convenient platform for creating dot-whisker plots - either directly from models or lists of models (<code>tidy()</code> methods are automatically called to convert the models to a tidy format), or from the (possibly post-processed) output of a <code>tidy()</code> call. There are a couple of caveats and issues to be aware of when using <code>dotwhisker</code> in conjunction with <code>broom.mixed</code>, however.</p>
+<ol style="list-style-type: decimal">
+<li>For fixed effects, the <code>group</code> value is set to <code>NA</code>: in the current CRAN version (0.5.0), an unfortunate <code>na.omit()</code> within the <code>dwplot</code> code will eliminate all of the fixed effects unless you drop this column before passing the results to <code>dwplot</code> (this <a href="https://github.com/fsolt/dotwhisker/commit/e014e8dba95181dfcf5a68964cd7fdeb844e97cd">has been fixed</a> in the current GitHub version, which you can install with <code>devtools::install_github(&quot;fsolt/dotwhisker&quot;)</code>).</li>
+<li>In <code>broom.mixed</code> output, it is fairly common for a single tidied model to have duplicated entries in the <code>term</code> column (e.g. effects that appear in both the conditional and the zero-inflated model, or intercept standard deviations for several different grouping variables). <code>dotwhisker::dwplot</code> takes this as evidence that it has been handed a tidied object containing the results from several different models, and asks for a <code>model</code> column that will distinguish the non-unique terms. There are (at least) two strategies you can take:
+<ul>
+<li><code>dwplot(list(fitted_model))</code> will plot all of the non-unique values together</li>
+<li><code>tidy(fitted_model) %&gt;% tidyr::unite(term, group, term)</code> will create a new <code>term</code> column that’s the combination of the <code>group</code> and <code>term</code> columns (which will disambiguate random-effect terms from different grouping variables); <code>unite(term, component, term)</code> will disambiguate conditional and zero-inflation parameters. The code below shows a slightly more complicated (but prettier) approach. (Some sort of <code>disambiguate_terms()</code> function could be added in a future version of the package …)</li>
+</ul></li>
+</ol>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(<span class="st">&quot;dplyr&quot;</span>)
+<span class="kw">library</span>(<span class="st">&quot;tidyr&quot;</span>)
+<span class="kw">library</span>(<span class="st">&quot;broom.mixed&quot;</span>)
+if (<span class="kw">require</span>(<span class="st">&quot;brms&quot;</span>) &amp;&amp;<span class="st"> </span><span class="kw">require</span>(<span class="st">&quot;dotwhisker&quot;</span>) &amp;&amp;<span class="st"> </span><span class="kw">require</span>(<span class="st">&quot;ggplot2&quot;</span>)) {
+    L &lt;-<span class="st"> </span><span class="kw">load</span>(<span class="kw">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;brms_example.rda&quot;</span>, <span class="dt">package=</span><span class="st">&quot;broom.mixed&quot;</span>))
+    gg0 &lt;-<span class="st"> </span>(<span class="kw">tidy</span>(brms_crossedRE)
+        ## disambiguate
+        %&gt;%<span class="st"> </span><span class="kw">mutate</span>(<span class="dt">term=</span><span class="kw">ifelse</span>(<span class="kw">grepl</span>(<span class="st">&quot;sd__(Int&quot;</span>,term,<span class="dt">fixed=</span><span class="ot">TRUE</span>),
+                               <span class="kw">paste</span>(group,term,<span class="dt">sep=</span><span class="st">&quot;.&quot;</span>),
+                               term))
+        %&gt;%<span class="st"> </span>dwplot
+    )
+    gg0 +<span class="st"> </span><span class="kw">geom_vline</span>(<span class="dt">xintercept=</span><span class="dv">0</span>,<span class="dt">lty=</span><span class="dv">2</span>)
+}</code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+</div>
+</div>
+<div id="capabilities" class="section level1">
+<h1>Capabilities</h1>
+<table>
+<colgroup>
+<col width="4%"></col>
+<col width="4%"></col>
+<col width="3%"></col>
+<col width="4%"></col>
+<col width="4%"></col>
+<col width="7%"></col>
+<col width="8%"></col>
+<col width="8%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="9%"></col>
+<col width="7%"></col>
+<col width="6%"></col>
+<col width="7%"></col>
+<col width="4%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">package</th>
+<th align="center">object</th>
+<th align="center">tidy</th>
+<th align="center">glance</th>
+<th align="center">augment</th>
+<th align="center">effects.fixed</th>
+<th align="center">effects.ran_vals</th>
+<th align="center">effects.ran_pars</th>
+<th align="center">effects.ran_coefs</th>
+<th align="center">confint…Ww.ald.</th>
+<th align="center">confint..profile.</th>
+<th align="center">confint..boot.</th>
+<th align="center">component.zi</th>
+<th align="center">component.disp</th>
+<th align="center">covstruct</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">lme4</td>
+<td align="center">glmer</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">NA</td>
+<td align="center">y</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">?</td>
+</tr>
+<tr class="even">
+<td align="center">lme4</td>
+<td align="center">lmer</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">NA</td>
+<td align="center">y</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">?</td>
+</tr>
+<tr class="odd">
+<td align="center">nlme</td>
+<td align="center">lme</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">NA</td>
+<td align="center">n</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">?</td>
+<td align="center">?</td>
+</tr>
+<tr class="even">
+<td align="center">nlme</td>
+<td align="center">gls</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">n</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">?</td>
+<td align="center">?</td>
+</tr>
+<tr class="odd">
+<td align="center">nlme</td>
+<td align="center">nlme</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">n</td>
+<td align="center">y</td>
+<td align="center">NA</td>
+<td align="center">n</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">?</td>
+<td align="center">?</td>
+</tr>
+<tr class="even">
+<td align="center">glmmTMB</td>
+<td align="center">glmmTMB</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">n</td>
+<td align="center">NA</td>
+<td align="center"></td>
+<td align="center">NA</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">?</td>
+</tr>
+<tr class="odd">
+<td align="center">glmmADMB</td>
+<td align="center">glmmadmb</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">n</td>
+<td align="center">NA</td>
+<td align="center"></td>
+<td align="center">NA</td>
+<td align="center">y</td>
+<td align="center">?</td>
+<td align="center">?</td>
+</tr>
+<tr class="even">
+<td align="center">brms</td>
+<td align="center">brmsfit</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">n</td>
+<td align="center">NA</td>
+<td align="center"></td>
+<td align="center">NA</td>
+<td align="center">y</td>
+<td align="center">?</td>
+<td align="center">?</td>
+</tr>
+<tr class="odd">
+<td align="center">rstanarm</td>
+<td align="center">stanreg</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">n</td>
+<td align="center">NA</td>
+<td align="center"></td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">?</td>
+</tr>
+<tr class="even">
+<td align="center">MCMCglmm</td>
+<td align="center">MCMCglmm</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">y</td>
+<td align="center">n</td>
+<td align="center">NA</td>
+<td align="center"></td>
+<td align="center">NA</td>
+<td align="center">?</td>
+<td align="center">?</td>
+<td align="center">?</td>
+</tr>
+<tr class="odd">
+<td align="center">TMB</td>
+<td align="center">TMB</td>
+<td align="center">y</td>
+<td align="center">n</td>
+<td align="center">n</td>
+<td align="center">n</td>
+<td align="center">n</td>
+<td align="center">n</td>
+<td align="center">n</td>
+<td align="center">NA</td>
+<td align="center"></td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">?</td>
+</tr>
+<tr class="even">
+<td align="center">INLA</td>
+<td align="center"></td>
+<td align="center">n</td>
+<td align="center">n</td>
+<td align="center">n</td>
+<td align="center">n</td>
+<td align="center">n</td>
+<td align="center">n</td>
+<td align="center">n</td>
+<td align="center">NA</td>
+<td align="center"></td>
+<td align="center">NA</td>
+<td align="center">?</td>
+<td align="center">?</td>
+<td align="center">?</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

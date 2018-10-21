@@ -97,6 +97,7 @@ tidy.glmmTMB <- function(x, effects = c("ran_pars", "fixed"),
   if (length(component[!component %in% c("cond", "zi")]) > 0L) {
     stop("only works for conditional and (partly for) zero-inflation components")
   }
+  ss <- ss[component]
   effect_names <- c("ran_pars", "fixed", "ran_vals")
   if (!is.null(scales)) {
     if (length(scales) != length(effects)) {
@@ -128,6 +129,7 @@ tidy.glmmTMB <- function(x, effects = c("ran_pars", "fixed"),
       for (comp in component) {
         cifix <- confint(x,
           method = tolower(conf.method),
+          level = conf.level,               
           component = comp,
           estimate = FALSE,
           ## conditional/zi components
@@ -187,30 +189,42 @@ tidy.glmmTMB <- function(x, effects = c("ran_pars", "fixed"),
 
     ## don't try to assign as rowname (non-unique anyway),
     ## make it directly into a term column
-    ret[["term"]] <- apply(ret[c("var1", "var2")], 1,
-      ran_pars_name,
-      ran_prefix = ran_prefix
-    )
+    if (nrow(ret)>0) {
+        ret[["term"]] <- apply(ret[c("var1", "var2")], 1,
+                               ran_pars_name,
+                               ran_prefix = ran_prefix
+                               )
 
-    ## keep only desired term, rename
-    ## FIXME: should use select + tidyeval + rename ... ?
-    ret <- setNames(
-      ret[c("component", "grp", "term", rscale)],
-      c("component", "group", "term", "estimate")
-    )
-
+       ## keep only desired term, rename
+       ## FIXME: should use select + tidyeval + rename ... ?
+       ranpar_names <- c("component", "group", "term", "estimate")
+       ret <- setNames(
+          ret[c("component", "grp", "term", rscale)],
+          ranpar_names
+       )
+    } else {
+        ret <- dplyr::data_frame(component=character(0),
+                      group=character(0),
+                      term=character(0),
+                      estimate=numeric(0))
+    }
     ## rownames(ret) <- seq(nrow(ret))
 
-    if (conf.int) {
-      ciran <- (confint(x,
-        parm = "theta_", method = conf.method,
-        estimate = FALSE,
-        ...
+      if (conf.int) {
+        thpar <- "theta_"
+        if (utils::packageVersion("glmmTMB")<="0.2.2.0") {
+             thpar <- which(names(x$obj$par)=="theta")
+        }
+        ciran <- (confint(x,
+                          ## for next glmmTMB (> 0.2.3) can be "theta_",
+                          parm = thpar,
+                          method = conf.method,
+                          level = conf.level,                
+                          estimate = FALSE,
+                          ...
       )
-      %>%
-        as_tibble()
-        %>%
-        setNames(c("conf.low", "conf.high"))
+      %>% as_tibble()
+      %>% setNames(c("conf.low", "conf.high"))
       )
       ret <- bind_cols(ret, ciran)
     }

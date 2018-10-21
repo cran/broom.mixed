@@ -1,10 +1,13 @@
 Package: broom.mixed
 Type: Package
 Title: Tidying Methods for Mixed Models
-Version: 0.2.2
+Version: 0.2.3
 Authors@R: c(
-    person("Ben", "Bolker", email = "bolker@mcmaster.ca", role = c("aut", "cre")),
-    person("David", "Robinson", email = "admiral.david@gmail.com", role = "aut"),
+    person("Ben", "Bolker", email = "bolker@mcmaster.ca",
+        role = c("aut", "cre"),
+        comment=c(ORCID="0000-0002-2127-0443")),
+    person("David", "Robinson", email = "admiral.david@gmail.com",
+    	role = "aut"),
     person("Dieter", "Menne", role = "ctb"),
     person("Jonah", "Gabry", role = "ctb"),
     person("Paul", "Buerkner", role = "ctb"),
@@ -25,16 +28,18 @@ Depends: R (>= 3.5.0)
 Imports: broom, dplyr, tidyr, plyr, purrr, tibble, reshape2, nlme,
         methods, stringr, coda, glmmTMB, TMB
 Suggests: knitr, testthat, ggplot2, Matrix, MCMCglmm, lme4, rstan,
-        rstanarm, brms, mgcv, gamlss, lmerTest, glmmADMB
+        rstanarm, brms, mgcv, gamlss, lmerTest, glmmADMB, dotwhisker,
+        pander
 URL: http://github.com/bbolker/broom.mixed
 BugReports: http://github.com/bbolker/broom.mixed/issues
 License: GPL-3
 RoxygenNote: 6.1.0
 Encoding: UTF-8
 Additional_repositories: http://bbolker.github.io/drat
+VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2018-09-14 14:43:38 UTC; bolker
-Author: Ben Bolker [aut, cre],
+Packaged: 2018-10-21 18:43:06 UTC; bolker
+Author: Ben Bolker [aut, cre] (<https://orcid.org/0000-0002-2127-0443>),
   David Robinson [aut],
   Dieter Menne [ctb],
   Jonah Gabry [ctb],
@@ -44,4 +49,4 @@ Author: Ben Bolker [aut, cre],
   Josh Wiley [ctb],
   Patrick Kennedy [ctb]
 Repository: CRAN
-Date/Publication: 2018-09-20 18:00:10 UTC
+Date/Publication: 2018-10-21 21:40:15 UTC

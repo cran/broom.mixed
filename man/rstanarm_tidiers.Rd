@@ -7,7 +7,7 @@
 \title{Tidying methods for an rstanarm model}
 \usage{
 \method{tidy}{stanreg}(x, effects = "fixed", conf.int = FALSE,
-  conf.level = 0.9, ...)
+  conf.level = 0.9, conf.method = c("quantile", "HPDinterval"), ...)
 
 \method{glance}{stanreg}(x, looic = FALSE, ...)
 }
@@ -24,6 +24,9 @@ See the Value section for details.}
 \code{\link[rstanarm]{posterior_interval.stanreg}} for details.}
 
 \item{conf.level}{See \code{\link[rstanarm]{posterior_interval.stanreg}}.}
+
+\item{conf.method}{method for computing confidence intervals
+("quantile" or "HPDinterval")}
 
 \item{...}{For \code{glance}, if \code{looic=TRUE}, optional arguments to
 \code{\link[rstanarm]{loo.stanreg}}.}
@@ -82,18 +85,18 @@ These methods tidy the estimates from \code{\link[rstanarm]{stanreg-objects}}
 }
 \examples{
 
-\dontrun{
 if (require("rstanarm")) {
-    ## original model
+\dontrun{
+#'     ## original model
     fit <- stan_glmer(mpg ~ wt + (1|cyl) + (1+wt|gear), data = mtcars,
                       iter = 300, chains = 2)
   }
-}
 ## load example data
 fit <- readRDS(system.file("extdata", "rstanarm_example.rds", package="broom.mixed"))
 
   # non-varying ("population") parameters
   tidy(fit, conf.int = TRUE, prob = 0.5)
+  tidy(fit, conf.int = TRUE, conf.method = "HPDinterval", prob = 0.5)
 
   # hierarchical sd & correlation parameters
   tidy(fit, effects = "ran_pars")
@@ -106,6 +109,7 @@ fit <- readRDS(system.file("extdata", "rstanarm_example.rds", package="broom.mix
   \dontrun{
      glance(fit, looic = TRUE, cores = 1)
   }
+} ## if require("rstanarm")
 }
 \seealso{
 \code{\link[rstanarm]{summary.stanreg}}

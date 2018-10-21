@@ -15,18 +15,18 @@
 #'   \code{\link[rstanarm]{stanreg-objects}}.
 #' @examples
 #'
-#' \dontrun{
 #' if (require("rstanarm")) {
-#'     ## original model
+#' \dontrun{
+#' #'     ## original model
 #'     fit <- stan_glmer(mpg ~ wt + (1|cyl) + (1+wt|gear), data = mtcars,
 #'                       iter = 300, chains = 2)
 #'   }
-#' }
 #' ## load example data
 #' fit <- readRDS(system.file("extdata", "rstanarm_example.rds", package="broom.mixed"))
 #'
 #'   # non-varying ("population") parameters
 #'   tidy(fit, conf.int = TRUE, prob = 0.5)
+#'   tidy(fit, conf.int = TRUE, conf.method = "HPDinterval", prob = 0.5)
 #'
 #'   # hierarchical sd & correlation parameters
 #'   tidy(fit, effects = "ran_pars")
@@ -39,6 +39,7 @@
 #'   \dontrun{
 #'      glance(fit, looic = TRUE, cores = 1)
 #'   }
+#' } ## if require("rstanarm")
 NULL
 
 #' @rdname rstanarm_tidiers
@@ -78,7 +79,9 @@ tidy.stanreg <- function(x,
                          effects = "fixed",
                          conf.int = FALSE,
                          conf.level = 0.9,
+                         conf.method=c("quantile","HPDinterval"),
                          ...) {
+  conf.method <- match.arg(conf.method)
   effects <-
     match.arg(effects,
       several.ok = TRUE,
@@ -111,12 +114,19 @@ tidy.stanreg <- function(x,
     }
 
     if (conf.int) {
-      cifix <-
-        rstanarm::posterior_interval(
-          object = x,
-          pars = nv_pars,
-          prob = conf.level
-        )
+        cifix <- switch(conf.method,
+                        HPDinterval= {
+                            m <- as.matrix(x$stanfit)
+                            m <- m[,colnames(m) %in% nv_pars]
+                            coda::HPDinterval(coda::as.mcmc(m),
+                                              prob=conf.level)
+        },
+        quantile=rstanarm::posterior_interval(
+                                 object = x,
+                                 pars = nv_pars,
+                                 prob = conf.level
+                           )
+        ) ## cifix
       ret <- data.frame(ret, cifix)
       nn <- c(nn, "conf.low", "conf.high")
     }

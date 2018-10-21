@@ -1,3 +1,4 @@
+
 stopifnot(require("testthat"), require("broom.mixed"))
 ## test tidy, augment, glance methods from lme4-tidiers.R
 
@@ -10,7 +11,7 @@ if (require(lme4, quietly = TRUE)) {
     mustWork = TRUE
   ))
 
-  context("lme4 models")
+context("lme4 models")
 
   d <- as.data.frame(ChickWeight)
   colnames(d) <- c("y", "x", "subj", "tx")
@@ -127,13 +128,18 @@ if (require(lme4, quietly = TRUE)) {
   dNAs$y[c(1, 3, 5)] <- NA
 
   test_that("augment works on lme4 fits with NAs", {
-    fitNAs <- lmer(y ~ tx * x + (x | subj), data = dNAs)
+    fitNAs <- lmer(y ~ tx * x + (x | subj), data = dNAs,
+                     control=lmerControl(check.conv.grad=
+                     .makeCC("warning", tol = 5e-2, relTol = NULL)))
     au <- suppressWarnings(broom::augment(fitNAs))
     expect_equal(nrow(au), sum(complete.cases(dNAs)))
   })
 
   test_that("augment works on lme4 fits with na.exclude", {
-    fitNAs <- lmer(y ~ tx * x + (x | subj), data = dNAs, na.action = "na.exclude")
+      fitNAs <- lmer(y ~ tx * x + (x | subj),
+                     data = dNAs, na.action = "na.exclude",
+                     control=lmerControl(check.conv.grad=
+                     .makeCC("warning", tol = 5e-2, relTol = NULL)))
 
     # expect_error(suppressWarnings(augment(fitNAs)))
     au <- suppressWarnings(broom::augment(fitNAs, dNAs))
@@ -164,6 +170,14 @@ if (require(lme4, quietly = TRUE)) {
     expect_equal(td3$term, c("(Intercept)", "Days"))
   })
 }
+
+test_that("tidy respects conf.level", {
+     tmpf <- function(cl=0.95) {
+         return(tidy(lmm0,conf.int=TRUE,conf.level=cl)[1,][["conf.low"]])
+     }
+     expect_equal(tmpf(),232.3019,tolerance=1e-4)
+     expect_equal(tmpf(0.5),244.831,tolerance=1e-4)
+})
 
 if (require(lmerTest, quietly = TRUE)) {
   context("lmerTest")

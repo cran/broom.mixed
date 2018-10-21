@@ -1,3 +1,4 @@
+context("test all tidy methods return tibbles")
 verbose <- FALSE
 stopifnot(
   require("testthat"), require("broom.mixed"), require("stringr"),
@@ -5,14 +6,21 @@ stopifnot(
 )
 
 ## objects to SKIP (from RDA files)
-skip_list <- list(nlme_example.rda = c("lmm2"))
+skip_objects <- list(nlme_example.rda = c("lmm2"),
+                  ## glance method not working for this case
+                  brms_example.rda = c("brms_multi","brms_multi_RE")
+                  )
+
+skip_files <- c("efc.rds")
 
 ## need data available for augment() methods ...
 data("sleepstudy", package = "lme4")
 data("Salamanders", package = "glmmTMB")
+efc <- readRDS(system.file("extdata","efc.rds",package="broom.mixed"))
 ex <- list.files(system.file("extdata", package = "broom.mixed"),
   pattern = "\\.rd"
-)
+  )
+ex <- setdiff(ex,skip_files)
 
 
 ## test tidy, augment, glance methods from lme4-tidiers.R
@@ -29,7 +37,7 @@ for (e in ex) {
         } else {
             ## rda file
             L <- load(f)
-            x <- mget(setdiff(L, skip_list[[fn]]))
+            x <- mget(setdiff(L, skip_objects[[fn]]))
         }
         for (z in x) {
             testf <- function(fn_str, obj) {
