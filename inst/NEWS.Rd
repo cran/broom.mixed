@@ -4,6 +4,28 @@
 \title{broom.mixed News}
 \encoding{UTF-8}
 
+\section{CHANGES IN VERSION 0.2.4}{
+  \subsection{NEW FEATURES}{
+     \itemize{
+	\item \code{gls} tidier gets confint (GH #49)
+	}
+      }
+      \subsection{USER-VISIBLE CHANGES}{
+	\itemize{
+	  \item redundant \code{estimate.method} in MCMC tidiers goes
+	  away; use \code{robust} to compute point estimates/uncertainty via
+	  median and MAD rather than mean and SE
+	}
+      }
+      \subsection{BUG FIXES}{
+	\itemize{
+          \item misc fixes: \code{lme4} tidiers (confint for ran_vals,
+	  profile conf intervals fixed), \code{R2jags}, \code{gamlss} ...
+	  \item ran_vals works for \code{glmmTMB}
+	}
+      }
+}
+	
 \section{CHANGES IN VERSION 0.2.3}{
   \subsection{BUG FIXES}{
     \itemize{
@@ -12,7 +34,7 @@
       \item component argument works for random effects in glmmTMB (GH #33: @strengejacke)
     }
   }
-  \subsection{NEW FIXES}{
+  \subsection{NEW FEATURES}{
     \itemize{
       \item \code{brmsfit} and \code{rstanarm} methods allow
       \code{conf.method="HPDinterval"}

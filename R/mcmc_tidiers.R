@@ -2,7 +2,6 @@
 #'
 #' @param x a model fit to be converted to a data frame
 #' @param pars (character) specification of which parameters to include
-#' @param estimate.method method for computing point estimate ("mean" or "median")
 #' @param effects which effects (fixed, random, etc.) to return
 #' @param robust use mean and standard deviation (if FALSE) or median and mean absolute deviation (if TRUE) to compute point estimates and uncertainty?
 #' @param scales scales on which to report results
@@ -43,7 +42,7 @@
 #'    tidy(rstan_example)
 #'    tidy(rstan_example, conf.int = TRUE, pars = "theta")
 #'    td_mean <- tidy(rstan_example, conf.int = TRUE)
-#'    td_median <- tidy(rstan_example, conf.int = TRUE, estimate.method = "median")
+#'    td_median <- tidy(rstan_example, conf.int = TRUE, robust = TRUE)
 #' 
 #'   if (require(dplyr) && require(ggplot2)) {
 #'     tds <- rbind(mutate(td_mean, method = "mean"),
@@ -58,6 +57,16 @@
 #'       facet_wrap(~type,scale="free",ncol=1)
 #'  } ## require(dplyr,ggplot2)
 #' } ## require(rstan)
+#' if (require(R2jags)) {
+#'    ## see help("jags",package="R2jags")
+#'    ## and  example("jags",package="R2jags")
+#'    ## for details
+#'    ## load stored object
+#'    R2jags_example <- readRDS(system.file("extdata", "R2jags_example.rds", package = "broom.mixed"))
+#'    tidy(R2jags_example)
+#'    tidy(R2jags_example, conf.int=TRUE, conf.method="quantile")
+#' }
+
 #'
 #' @importFrom stats median sd
 #' @importFrom coda HPDinterval as.mcmc
@@ -76,7 +85,12 @@ tidyMCMC <- function(x,
   conf.method <- match.arg(conf.method)
 
   stan <- inherits(x, "stanfit")
-  ss <- if (stan) as.matrix(x, pars = pars) else as.matrix(x)
+  ss <- if (stan) {
+            as.matrix(x, pars = pars)
+        } else {
+            as.matrix(x)
+        }
+  
   ss <- ss[, !colnames(ss) %in% drop.pars, drop = FALSE] ## drop log-probability info
   if (!missing(pars) && !stan) {
     if (length(badpars <- which(!pars %in% colnames(ss))) > 0) {
@@ -113,10 +127,17 @@ tidyMCMC <- function(x,
     ret <- bind_cols(ret, ci)
   }
 
-  if (rhat || ess) {
-    if (!stan) warning("ignoring 'rhat' and 'ess' (only available for stanfit objects)")
-    summ <- rstan::summary(x, pars = pars, probs = NULL)$summary[, c("Rhat", "n_eff"), drop = FALSE]
-    summ <- summ[!dimnames(summ)[[1L]] %in% drop.pars, , drop = FALSE]
+  if (!stan) {
+      if (rhat) warning("ignoring 'rhat' (only available for stanfit objects)")
+      if (ess) {
+          ess_vals <- coda::effectiveSize(x)
+          ## FIXME: deal with this
+          if (!missing(pars)) warning("pars ignored in ESS computation - might break something?")
+          ret$ess <- as.integer(round(ess_vals))
+      }
+  } else {
+      summ <- rstan::summary(x, pars = pars, probs = NULL)$summary[, c("Rhat", "n_eff"), drop = FALSE]
+      summ <- summ[!dimnames(summ)[[1L]] %in% drop.pars, , drop = FALSE]
     if (rhat) ret$rhat <- summ[, "Rhat"]
     if (ess) ret$ess <- as.integer(round(summ[, "n_eff"]))
   }
@@ -128,14 +149,16 @@ tidyMCMC <- function(x,
 ##' @importFrom coda as.mcmc
 ##' @export
 tidy.rjags <- function(x,
-                       estimate.method = "mean",
+                       robust = FALSE,
                        conf.int = FALSE,
                        conf.level = 0.95,
                        conf.method = "quantile",
                        ...) {
   tidyMCMC(as.mcmc(x$BUGS),
-    estimate.method, conf.int, conf.level,
-    conf.method,
+           robust = robust,
+           conf.int = conf.int,
+           conf.level = conf.level,
+           conf.method = conf.method,
     drop.pars = "deviance"
   )
 }
@@ -147,3 +170,24 @@ tidy.stanfit <- tidyMCMC
 ##' @rdname mcmc_tidiers
 ##' @export
 tidy.mcmc <- tidyMCMC
+
+##' @rdname mcmc_tidiers
+##' @export
+tidy.mcmc.list <- tidyMCMC
+
+
+## copied from emdbook ...
+as.mcmc.bugs <- function (x) {
+    if (x$n.chains > 1) {
+        z <- list()
+        for (i in 1:x$n.chains) {
+            z[[i]] <- coda::mcmc(x$sims.array[, i, ],
+                                 start = 1, thin = x$n.thin)
+        }
+        class(z) <- "mcmc.list"
+    }
+    else {
+        z <- coda::mcmc(x$sims.matrix, start = 1, thin = x$n.thin)
+    }
+    return(z)
+}

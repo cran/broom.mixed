@@ -2,14 +2,11 @@
 stopifnot(require("testthat"), require("broom.mixed"))
 ## test tidy, augment, glance methods from lme4-tidiers.R
 
-## HACK: need to make sure we find the right generic!
-tidy <- broom.mixed:::tidy.merMod
-
 if (require(lme4, quietly = TRUE)) {
   load(system.file("extdata", "lme4_example.rda",
     package = "broom.mixed",
     mustWork = TRUE
-  ))
+    ))
 
 context("lme4 models")
 
@@ -179,11 +176,36 @@ test_that("tidy respects conf.level", {
      expect_equal(tmpf(0.5),244.831,tolerance=1e-4)
 })
 
+test_that("effects='ran_pars' + conf.int works", {
+    tt <- tidy(lmm0, effects="ran_pars", conf.int=TRUE, conf.method="profile",
+               quiet=TRUE)[c("conf.low","conf.high")]
+    tt0 <- structure(list(conf.low = c(26.007120448854, 27.8138472081303
+), conf.high = c(52.9359835296834, 34.591049857869)), row.names = c(NA, 
+-2L), class = c("tbl_df", "tbl", "data.frame"))
+    tt0 <- structure(list(conf.low = c(26.00712, 27.81384),
+                                conf.high = c(52.9359, 34.59104)),
+                           row.names = c(NA, -2L),
+                     class = c("tbl_df", "tbl", "data.frame"))
+    ## ??? why do I need as.data.frame??
+    ## otherwise [1] "Rows in x but not y: 2, 1. Rows in y but not x: 2, 1. "
+    expect_equal(as.data.frame(tt0), as.data.frame(tt),
+                 tolerance=1e-5)
+
+})
+
+test_that("augment returns a tibble", {
+    ## GH 51
+    expect_is(augment(fit), "tbl")
+})
+
+## KEEP THIS LAST to avoid screwing up S3 methods stack
 if (require(lmerTest, quietly = TRUE)) {
   context("lmerTest")
   test_that("lmerTest results include p-values", {
     lmm1X <- lmer(Reaction ~ Days + (Days | Subject), sleepstudy)
-    expect("p.value" %in% names(tidy(lmm1X, effect = "fixed")))
+    expect("p.value" %in% names(tidy(lmm1X, effect = "fixed")),
+           "no p value in lmerTest results")
   })
   detach("package:lmerTest")
 }
+

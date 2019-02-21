@@ -1,9 +1,12 @@
+options(save.defaults=list(version=2, safe=TRUE))
+
 save_file <- function(..., pkg, type = "rda") {
   f <- file.path("inst", "extdata", sprintf("%s_example.%s", pkg, type))
+  cat("saving in serialization version 2")
   if (type == "rda") {
-    save(..., file = f)
+    save(..., file = f, version=2)
   } else {
-    saveRDS(..., file = f)
+    saveRDS(..., file = f, version=2)
   }
   invisible(NULL)
 }

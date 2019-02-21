@@ -42,14 +42,18 @@
 #'     tidy(glmm1)
 #'     tidy(glmm1,exponentiate=TRUE)
 #'     tidy(glmm1, effects = "fixed")
-#'     head(augment(glmm1, cbpp))
+#'     ## suppress warning about influence.merMod
+#'     head(suppressWarnings(augment(glmm1, cbpp)))
 #'     glance(glmm1)
 #'
 #'     startvec <- c(Asym = 200, xmid = 725, scal = 350)
 #'     nm1 <- nlmer(circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree,
 #'                   Orange, start = startvec)
+#'     ## suppress warnings about var-cov matrix ...
+#'     op <- options(warn=-1)
 #'     tidy(nm1)
 #'     tidy(nm1, effects = "fixed")
+#'     options(op)
 #'     head(augment(nm1, Orange))
 #'     glance(nm1)
 #'     detach("package:lme4")
@@ -73,12 +77,13 @@ confint.rlmerMod <- function(x, parm,
 }
 
 ## FIXME: relatively trivial/only used in one place, could
-## probably be eliminated?
+## probably be eliminated? OR move to utils (also in glmmTMB?)
 fix_ran_vals <- function(g) {
   term <- level <- estimate <- NULL
-  r <- g %>%
-    tibble::rownames_to_column("level") %>%
-    gather(term, estimate, -level)
+  r <- (g
+      %>% tibble::rownames_to_column("level")
+      %>% gather(term, estimate, -level)
+  )
   return(r)
 }
 
@@ -144,6 +149,12 @@ tidy.merMod <- function(x, effects = c("ran_pars", "fixed"),
     stop("unknown effect type ", miss)
   }
 
+  if (conf.int && conf.method == "profile" && !is.null(profile)) {
+     p <- profile
+  } else {
+     p <- x
+  }
+
   ret_list <- list()
   if ("fixed" %in% effects) {
     # return tidied fixed effects
@@ -159,12 +170,6 @@ tidy.merMod <- function(x, effects = c("ran_pars", "fixed"),
     if (debug) {
       cat("output from coef(summary(x)):\n")
       print(coef(ss))
-    }
-
-    if (conf.int && conf.method == "profile" && !is.null(profile)) {
-      p <- profile
-    } else {
-      p <- x
     }
 
     ## need to save rownames before dplyr (mutate(), bind_cols())
@@ -265,15 +270,12 @@ tidy.merMod <- function(x, effects = c("ran_pars", "fixed"),
     ## fix each group to be a tidy data frame
 
     ret <- (ranef(x, condVar = TRUE)
-    %>%
-      as.data.frame(stringsAsFactors = FALSE)
-      %>%
-      dplyr::rename(
-        group = grpvar, level = grp,
-        estimate = condval, std.error = condsd
-      )
-      %>%
-      dplyr::mutate_if(is.factor, as.character)
+        %>% as.data.frame(stringsAsFactors = FALSE)
+        %>% dplyr::rename(
+                       group = grpvar, level = grp,
+                       estimate = condval, std.error = condsd
+                   )
+        %>% dplyr::mutate_if(is.factor, as.character)
     )
 
     if (conf.int) {
@@ -338,13 +340,14 @@ tidy.rlmerMod <- tidy.merMod
 #' ".offset", ".sqrtXwt", ".sqrtrwt", ".eta"}.
 #'
 #' @importFrom broom augment augment_columns
+#' @importFrom dplyr bind_cols
 #' @export
 augment.merMod <- function(x, data = stats::model.frame(x), newdata, ...) {
   # move rownames if necessary
   if (missing(newdata)) {
     newdata <- NULL
   }
-  ret <- augment_columns(x, data, newdata, se.fit = NULL, ...)
+  ret <- suppressMessages(augment_columns(x, data, newdata, se.fit = NULL, ...))
 
   # add predictions with no random effects (population means)
   predictions <- stats::predict(x, re.form = NA)
@@ -364,12 +367,16 @@ augment.merMod <- function(x, data = stats::model.frame(x), newdata, ...) {
   )
   cols <- lapply(respCols, function(cc) x@resp[[cc]])
   names(cols) <- paste0(".", respCols)
-  ## remove missing fields
-  cols <- as.data.frame(compact(cols), stringsAsFactors = FALSE)
+
+  ## remove too-long fields and empty fields
+  n_vals <- vapply(cols,length,1L)
+  min_n <- min(n_vals[n_vals>0])
+  
+  cols <- dplyr::bind_cols(cols[n_vals==min_n])
 
   cols <- insert_NAs(cols, ret)
   if (length(cols) > 0) {
-    ret <- cbind(ret, cols)
+    ret <- dplyr::bind_cols(ret, cols)
   }
 
   return(unrowname(ret))
@@ -422,12 +429,12 @@ glance.merMod <- function(x, ...) {
 ##'          geom_vline(xintercept=0,lty=2)+
 ##'          geom_point()+facet_wrap(~variable,scale="free_x")
 ##'       ## emphasize extreme values
-##'       aa2 <- aa  %>% group_by(grp,level) %>%
-##'             mutate(keep=any(estimate/std.error>2))
-##'        ## Update caterpillar plot with extreme levels highlighted
-##'        ##  (highlight all groups with *either* extreme intercept *or*
-##'        ##   extreme slope)
-##'       ggplot(aa2,aes(estimate,level,xmin=lb,xmax=ub,colour=factor(keep)))+
+##'       aa2 <- group_by(aa,grp,level)
+##'       aa3 <- mutate(aa2, keep=any(estimate/std.error>2))
+##'       ## Update caterpillar plot with extreme levels highlighted
+##'       ##  (highlight all groups with *either* extreme intercept *or*
+##'       ##   extreme slope)
+##'       ggplot(aa3, aes(estimate,level,xmin=lb,xmax=ub,colour=factor(keep)))+
 ##'          geom_errorbarh(height=0)+
 ##'          geom_vline(xintercept=0,lty=2)+
 ##'          geom_point()+facet_wrap(~variable,scale="free_x")+
@@ -496,4 +503,29 @@ augment.gamm4 <- function(x, ...) {
 ##' @export
 glance.gamm4 <- function(x, ...) {
   return(glance(x$mer, ...))
+}
+
+##' @export
+tidy.lmList4 <- function(x, conf.int = FALSE,
+                         conf.level = 0.95, ...) {
+
+    cols <- estimate <- std.error <- NULL ## R CMD check false positives
+    
+    ss <- summary(x)$coefficients
+    names(dimnames(ss)) <- c("group","cols","terms")
+    ret <- (ss
+        %>% dplyr::as.tbl_cube()
+        %>% dplyr::as_data_frame()
+        %>% tidyr::spread(cols,".")
+        %>% rename_regex_match()
+    )
+    if (conf.int) {
+        qq <- qnorm((1+conf.level)/2)
+        ret <- (ret %>%
+                mutate(conf.low=estimate-qq*std.error,
+                       conf.high=estimate+qq*std.error)
+        )
+        ## don't think reorder_cols is necessary ...?
+    }
+    return(ret)
 }
