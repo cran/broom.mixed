@@ -43,13 +43,13 @@
 #'    tidy(rstan_example, conf.int = TRUE, pars = "theta")
 #'    td_mean <- tidy(rstan_example, conf.int = TRUE)
 #'    td_median <- tidy(rstan_example, conf.int = TRUE, robust = TRUE)
-#' 
-#'   if (require(dplyr) && require(ggplot2)) {
-#'     tds <- rbind(mutate(td_mean, method = "mean"),
-#'              mutate(td_median, method = "median")) %>%
-#'        mutate(type=ifelse(grepl("^theta",term),"theta",
+#'    
+#'    if (require(dplyr) && require(ggplot2)) {
+#'        tds <- (dplyr::bind_rows(list(mean=td_mean, median=td_median), .id="method")
+#'           %>% mutate(type=ifelse(grepl("^theta",term),"theta",
 #'             ifelse(grepl("^eta",term),"eta",
 #'                   "other")))
+#'       )
 #'
 #'      ggplot(tds, aes(estimate, term)) +
 #'       geom_errorbarh(aes(xmin = conf.low, xmax = conf.high),height=0) +
@@ -102,7 +102,7 @@ tidyMCMC <- function(x,
   m <- if (robust) colMeans(ss) else apply(ss, 2, median)
 
   stdfun <- if (robust) stats::mad else stats::sd
-  ret <- dplyr::data_frame(
+  ret <- dplyr::tibble(
     term = names(m),
     estimate = m,
     std.error = apply(ss, 2, stdfun)

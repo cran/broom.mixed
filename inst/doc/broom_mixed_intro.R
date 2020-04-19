@@ -1,7 +1,7 @@
-## ----setup, include=FALSE, message=FALSE---------------------------------
+## ----setup, include=FALSE, message=FALSE--------------------------------------
 library(knitr)
 
-## ----dwplot1,message=FALSE,warning=FALSE---------------------------------
+## ----dwplot1,message=FALSE,warning=FALSE--------------------------------------
 library("dplyr")
 library("tidyr")
 library("broom.mixed")
@@ -17,7 +17,7 @@ if (require("brms") && require("dotwhisker") && require("ggplot2")) {
     gg0 + geom_vline(xintercept=0,lty=2)
 }
 
-## ----results="asis",echo=FALSE, message=FALSE----------------------------
+## ----results="asis",echo=FALSE, message=FALSE---------------------------------
 cc <- read.csv(system.file("capabilities.csv",package="broom.mixed"))
 if (require("pander")) {
     pander::pander(cc,split.tables=Inf)

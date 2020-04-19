@@ -26,6 +26,9 @@
 #'     tidy(lmm1)
 #'     tidy(lmm1, effects = "fixed")
 #'     tidy(lmm1, conf.int = TRUE)
+#'     tidy(lmm1, effects = "ran_pars")
+#'     tidy(lmm1, effects = "ran_vals")
+#'     tidy(lmm1, effects = "ran_coefs")
 #'     head(augment(lmm1, sleepstudy))
 #'     glance(lmm1)
 #'
@@ -44,15 +47,17 @@
 #'                          correlation = corAR1(form = ~ 1 | Mare))
 #'     tidy(gls1)
 #'     glance(gls1)
+#'     head(augment(gls1))
 #' }
 #'
 #' @rdname nlme_tidiers
 #'
-#' @param effects Either "random" (default) or "fixed"
+#' @param effects One or more of "ran_pars", "fixed", "ran_vals", and/or
+#'   "ran_coefs".
 #'
 #' @return \code{tidy} returns one row for each estimated effect, either
 #' random or fixed depending on the \code{effects} parameter. If
-#' \code{effects = "random"}, it contains the columns
+#' \code{effects = "ran_vals"} (or \code{"ran_pars"}), it contains the columns
 #'   \item{group}{the group within which the random effect is being estimated}
 #'   \item{level}{level within group}
 #'   \item{term}{term being estimated}
@@ -68,7 +73,7 @@
 #' @importFrom plyr ldply
 #' @importFrom nlme getVarCov intervals
 #' @import dplyr
-## @importFrom dplyr data_frame select full_join
+## @importFrom dplyr tibble select full_join
 #'
 #' @export
 tidy.lme <- function(x, effects = c("ran_pars", "fixed"),
@@ -114,7 +119,7 @@ tidy.lme <- function(x, effects = c("ran_pars", "fixed"),
       ret <- dplyr::full_join(ret, cifix, by = "term")
     }
 
-    ran_effs <- sprintf("ran_%s", c("pars", "modes", "coefs"))
+    ran_effs <- sprintf("ran_%s", c("pars", "vals", "coefs"))
     if (any(purrr::map_lgl(ran_effs, ~. %in% effects))) {
       ## add group="fixed" to tidy table for fixed effects
       ret <- mutate(ret, effect = "fixed", group = "fixed")
@@ -147,7 +152,7 @@ tidy.lme <- function(x, effects = c("ran_pars", "fixed"),
           "nonlinear models"
         }
       )
-      ret <- dplyr::data_frame()
+      ret <- dplyr::tibble()
     } else {
       vc <- nlme::getVarCov(x)
       ran_prefix <- switch(rscale,
@@ -187,7 +192,7 @@ tidy.lme <- function(x, effects = c("ran_pars", "fixed"),
         diag(vals) <- sqrt(diag(vc))
         vals <- c(lwrtri(vals), sigma(x))
       }
-      ret <- dplyr::data_frame(
+      ret <- dplyr::tibble(
         effect = "ran_pars",
         group = grpnames,
         term = c(nmvec),
@@ -212,7 +217,7 @@ tidy.lme <- function(x, effects = c("ran_pars", "fixed"),
             sub(re, "_\\2.\\1", nm[corterms],
               perl = TRUE
             )
-          return(dplyr::data_frame(
+          return(dplyr::tibble(
             term = nm, conf.low = z[, "lower"],
             conf.high = z[, "upper"]
           ))
@@ -347,4 +352,16 @@ glance.gls <- function(x, ...) {
       df.residual = dims[["N"]] - dims[["p"]]
     )
   )
+}
+
+#' @rdname nlme_tidiers
+#' @export
+augment.gls <- function(x, data = nlme::getData(x), newdata, ...) {
+
+  # move rownames if necessary
+  if (missing(newdata)) {
+    newdata <- NULL
+  }
+  ret <- augment_columns(x, data, newdata, se.fit = NULL)
+  ret
 }

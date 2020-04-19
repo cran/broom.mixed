@@ -5,6 +5,7 @@
 #'
 #' @param x An object of class \code{merMod}, such as those from \code{lmer},
 #' \code{glmer}, or \code{nlmer}
+#' @param ... Additional arguments (passed to \code{confint.merMod} for \code{tidy}; \code{augment_columns} for \code{augment}; ignored for \code{glance})
 #'
 #' @return All tidying methods return a \code{data.frame} without rownames.
 #' The structure depends on the method chosen.
@@ -20,7 +21,7 @@
 #'     }
 #'     ## load stored object
 #'     load(system.file("extdata", "lme4_example.rda", package="broom.mixed"))
-#'     tidy(lmm1)
+#'     (tt <- tidy(lmm1))
 #'     tidy(lmm1, effects = "fixed")
 #'     tidy(lmm1, effects = "fixed", conf.int=TRUE)
 #'     tidy(lmm1, effects = "fixed", conf.int=TRUE, conf.method="profile")
@@ -30,9 +31,12 @@
 #'     tidy(lmm1, effects = "ran_vals", conf.int=TRUE)
 #'     ## coefficients (group-level estimates)
 #'     (rcoef1 <- tidy(lmm1, effects = "ran_coefs"))
-#'     ## reconstitute standard coefficient-by-level table
-#'     if (require(tidyr)) {
+#'     if (require(tidyr) && require(dplyr)) {
+#'        ## reconstitute standard coefficient-by-level table
 #'        spread(rcoef1,key=term,value=estimate)
+#'        ## split ran_pars into type + term; sort fixed/sd/cor
+#'        (tt %>% separate(term,c("type","term"),sep="__",fill="left")
+#'            %>% arrange(!is.na(type),desc(type)))
 #'     }
 #'     head(augment(lmm1, sleepstudy))
 #'     glance(lmm1)
@@ -94,10 +98,11 @@ fix_ran_vals <- function(g) {
 #' @param conf.int whether to include a confidence interval
 #' @param conf.level confidence level for CI
 #' @param conf.method method for computing confidence intervals (see \code{lme4::confint.merMod})
-#' @param scales scales on which to report the variables: for random effects, the choices are \sQuote{"sdcor"} (standard deviations and correlations: the default if \code{scales} is \code{NULL}) or \sQuote{"vcov"} (variances and covariances). \code{NA} means no transformation, appropriate e.g. for fixed effects; inverse-link transformations (exponentiation or logistic) are not yet implemented, but may be in the future.
+#' @param scales scales on which to report the variables: for random effects, the choices are \sQuote{"sdcor"} (standard deviations and correlations: the default if \code{scales} is \code{NULL}) or \sQuote{"vcov"} (variances and covariances). \code{NA} means no transformation, appropriate e.g. for fixed effects.
 #' @param exponentiate  whether to exponentiate the fixed-effect coefficient estimates and confidence intervals (common for logistic regression); if \code{TRUE}, also scales the standard errors by the exponentiated coefficient, transforming them to the new scale
 #' @param ran_prefix a length-2 character vector specifying the strings to use as prefixes for self- (variance/standard deviation) and cross- (covariance/correlation) random effects terms
 #' @param profile pre-computed profile object, for speed when using \code{conf.method="profile"}
+#' @param ddf.method  the method for computing the degrees of freedom and t-statistics (only applicable when using the \pkg{lmerTest} package: see \code{\link[lmerTest]{summary.lmerModLmerTest}}
 #'
 #' @return \code{tidy} returns one row for each estimated effect, either
 #' with groups depending on the \code{effects} parameter.
@@ -111,13 +116,12 @@ fix_ran_vals <- function(g) {
 #'   \item{p.value}{P-value computed from t-statistic (may be missing/NA)}
 #'
 #' @importFrom plyr ldply
-#' @importFrom dplyr mutate bind_rows data_frame bind_cols
+#' @importFrom dplyr mutate bind_rows bind_cols
 #' @importFrom tibble rownames_to_column
 #' @importFrom tidyr gather spread
 #' @importFrom purrr map
 #' @importFrom nlme VarCorr ranef
 #' @importFrom methods is selectMethod
-#' @importFrom broom fix_data_frame
 #' @importFrom stats cov2cor
 
 #' @export
@@ -128,6 +132,7 @@ tidy.merMod <- function(x, effects = c("ran_pars", "fixed"),
                         conf.int = FALSE,
                         conf.level = 0.95,
                         conf.method = "Wald",
+                        ddf.method = NULL,
                         profile = NULL,
                         debug = FALSE,
                         ...) {
@@ -157,16 +162,20 @@ tidy.merMod <- function(x, effects = c("ran_pars", "fixed"),
 
   ret_list <- list()
   if ("fixed" %in% effects) {
-    # return tidied fixed effects
-    ## not quite sure why implicit/automatic method dispatch doesn't work,
-    ##  but we seem to need this to get the right summary for  merModLmerTest
-    ##  objects ...
-    sum_fun <- selectMethod("summary", class(x))
-    ss <- sum_fun(x)
-    ret <- stats::coef(ss) %>%
-      data.frame(check.names = FALSE) %>%
-      rename_regex_match()
-
+      ## return tidied fixed effects
+      ## not quite sure why implicit/automatic method dispatch doesn't work,
+      ##  but we seem to need this to get the right summary for  merModLmerTest
+      ##  objects ...
+      sum_fun <- selectMethod("summary", class(x))
+      if (inherits(x,"lmerModLmerTest")) {
+          ss <- sum_fun(x, ddf=ddf.method)
+      } else {
+          ss <- sum_fun(x)
+      }
+      ret <- stats::coef(ss) %>%
+          data.frame(check.names = FALSE) %>%
+          rename_regex_match()
+      
     if (debug) {
       cat("output from coef(summary(x)):\n")
       print(coef(ss))
@@ -179,7 +188,7 @@ tidy.merMod <- function(x, effects = c("ran_pars", "fixed"),
     if (conf.int) {
       if (is(x, "merMod") || is(x, "rlmerMod")) {
           cifix <- cifun(p, parm = "beta_", method = conf.method,
-                         level=conf.level, ...)
+                         level = conf.level, ...)
       } else {
         ## ?? for glmmTMB?  check ...
         cifix <- cifun(p, level = conf.level, ...)
@@ -232,7 +241,9 @@ tidy.merMod <- function(x, effects = c("ran_pars", "fixed"),
       }
       class(vc) <- "VarCorr.merMod"
     }
-    ret <- as.data.frame(vc)
+    ## n.b. use order="lower.tri" here so that term order matches
+    ## that returned by confint() !
+    ret <- as.data.frame(vc, order="lower.tri")
     ## purrr::map_at?
     ret[] <- lapply(ret, function(x) if (is.factor(x)) {
         as.character(x)
@@ -259,9 +270,11 @@ tidy.merMod <- function(x, effects = c("ran_pars", "fixed"),
       c("group", "term", "estimate")
     )
 
+    ## these are in 'lower.tri' order, need to make sure this
+    ## is matched in as.data.frame() below 
     if (conf.int) {
-      ciran <- cifun(p, parm = "theta_", method = conf.method, ...)
-      ret <- data.frame(ret, ciran, stringsAsFactors = FALSE)
+        ciran <- cifun(p, parm = "theta_", method = conf.method, ...)
+        ret <- data.frame(ret, ciran, stringsAsFactors = FALSE)
     }
     ret_list$ran_pars <- ret
   }
@@ -384,8 +397,6 @@ augment.merMod <- function(x, data = stats::model.frame(x), newdata, ...) {
 
 
 #' @rdname lme4_tidiers
-#'
-#' @param ... extra arguments (not used)
 #'
 #' @return \code{glance} returns one row with the columns
 #'   \item{sigma}{the square root of the estimated residual variance}

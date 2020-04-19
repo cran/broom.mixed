@@ -7,15 +7,21 @@
 \alias{augment.brmsfit}
 \title{Tidying methods for a brms model}
 \usage{
-\method{tidy}{brmsfit}(x, parameters = NA, effects = c("fixed",
-  "ran_pars"), robust = FALSE, conf.int = TRUE, conf.level = 0.95,
-  conf.method = c("quantile", "HPDinterval"), fix.intercept = TRUE,
-  ...)
+\method{tidy}{brmsfit}(
+  x,
+  parameters = NA,
+  effects = c("fixed", "ran_pars"),
+  robust = FALSE,
+  conf.int = TRUE,
+  conf.level = 0.95,
+  conf.method = c("quantile", "HPDinterval"),
+  fix.intercept = TRUE,
+  ...
+)
 
 \method{glance}{brmsfit}(x, looic = FALSE, ...)
 
-\method{augment}{brmsfit}(x, data = stats::model.frame(x),
-  newdata = NULL, se.fit = TRUE, ...)
+\method{augment}{brmsfit}(x, data = stats::model.frame(x), newdata = NULL, se.fit = TRUE, ...)
 }
 \arguments{
 \item{x}{Fitted model object from the \pkg{brms} package. See
@@ -98,6 +104,8 @@ The names \sQuote{fixed}, \sQuote{ran_pars}, and \sQuote{ran_vals}
 in previous versions of the package), while technically inappropriate in
 a Bayesian setting where "fixed" and "random" effects are not well-defined,
 are used for compatibility with other (frequentist) mixed model types.
+
+At present, the components of parameter estimates are separated by parsing the column names of \code{posterior_samples} (e.g. \code{r_patient[1,Intercept]} for the random effect on the intercept for patient 1, or \code{b_Trt1} for the fixed effect \code{Trt1}. We try to detect underscores in parameter names and warn, but detection may be imperfect.
 }
 \examples{
  ## original model
@@ -119,7 +127,7 @@ are used for compatibility with other (frequentist) mixed model types.
    glance(fit)
    ## this example will give a warning that it should be run with
    ## reloo=TRUE; however, doing this will fail
-   ## because the \\code{fit} object has been stripped down to save space
+   ## because the \code{fit} object has been stripped down to save space
    suppressWarnings(glance(fit, looic = TRUE, cores = 1))
    head(augment(fit))
 }

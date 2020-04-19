@@ -67,7 +67,6 @@ NULL
 #'   included? See \code{\link[rstanarm]{loo.stanreg}} for details. Note: for
 #'   models fit to very large datasets this can be a slow computation.
 #' @param ... Extra arguments, not used
-#'
 #' @return
 #' When \code{parameters = NA}, the \code{effects} argument is used
 #' to determine which parameters to summarize.
@@ -97,6 +96,7 @@ NULL
 #' in previous versions of the package), while technically inappropriate in
 #' a Bayesian setting where "fixed" and "random" effects are not well-defined,
 #' are used for compatibility with other (frequentist) mixed model types.
+#' @note At present, the components of parameter estimates are separated by parsing the column names of \code{posterior_samples} (e.g. \code{r_patient[1,Intercept]} for the random effect on the intercept for patient 1, or \code{b_Trt1} for the fixed effect \code{Trt1}. We try to detect underscores in parameter names and warn, but detection may be imperfect.
 #' @export
 tidy.brmsfit <- function(x, parameters = NA,
                          effects = c("fixed", "ran_pars"),
@@ -105,6 +105,10 @@ tidy.brmsfit <- function(x, parameters = NA,
                          conf.method = c("quantile", "HPDinterval"),
                          fix.intercept = TRUE,
                          ...) {
+  if (any(grepl("_", rownames(fixef(x)))) ||
+        any(grepl("_", names(ranef(x))))) {
+      warning("some parameter names contain underscores: term naming may be unreliable!")
+  }
   use_effects <- anyNA(parameters)
   conf.method <- match.arg(conf.method)
   is.multiresp <- length(x$formula$forms)>1
@@ -205,22 +209,21 @@ tidy.brmsfit <- function(x, parameters = NA,
         }
       }
       res_list$ran_pars <-
-        data_frame(
+        dplyr::tibble(
           group = sapply(ss2, grpfun),
           term = sapply(ss2, termfun)
         )
     }
     if ("ran_vals" %in% effects) {
       rterms <- grep(mkRE(prefs$ran_vals), terms, value = TRUE)
-      ss <- strsplit(rterms, "(_+|\\[|\\]|,)")
-      termfun <- function(x) x[[length(x)]]
-      grpfun <- function(x) x[[2]]
-      levelfun <- function(x) x[[length(x)-1]]
+      
+      vals <- stringr::str_match_all(rterms, "_(.+?)\\[(.+?),(.+?)\\]")
+
       res_list$ran_vals <-
-        data_frame(
-          group = sapply(ss, grpfun),
-          term = sapply(ss, termfun),
-          level = sapply(ss, levelfun)
+        dplyr::tibble(
+          group = plyr::laply(vals, function (v) { v[[2]] }),
+          term = plyr::laply(vals, function (v) { v[[4]] }),
+          level = plyr::laply(vals, function (v) { v[[3]] })
         )
     }
     out <- dplyr::bind_rows(res_list, .id = "effect")
@@ -237,7 +240,7 @@ tidy.brmsfit <- function(x, parameters = NA,
     ## prefixes already removed for ran_vals; don't remove for ran_pars
   } else {
     ## if !use_effects
-    out <- data_frame(term = names(samples))
+    out <- dplyr::tibble(term = names(samples))
   }
   pointfun <- if (robust) stats::median else base::mean
   stdfun <- if (robust) stats::mad else stats::sd
@@ -247,12 +250,12 @@ tidy.brmsfit <- function(x, parameters = NA,
     stopifnot(length(conf.level) == 1L)
     probs <- c((1 - conf.level) / 2, 1 - (1 - conf.level) / 2)
     if (conf.method == "HPDinterval") {
-      out[, c("conf.low", "conf.high")] <-
-          coda::HPDinterval(coda::as.mcmc(samples), prob=conf.level)
+        cc <- coda::HPDinterval(coda::as.mcmc(samples), prob=conf.level)
     } else {
-      out[, c("conf.low", "conf.high")] <-
-        t(apply(samples, 2, stats::quantile, probs = probs))
+        cc <- t(apply(samples, 2, stats::quantile, probs = probs))
     }
+    out$conf.low <- cc[,1]
+    out$conf.high <- cc[,2]
   }
   ## figure out component
   out$component <- dplyr::case_when(grepl("(^|_)zi",out$term) ~ "zi",
@@ -299,10 +302,13 @@ augment.brmsfit <- function(x, data = stats::model.frame(x), newdata = NULL,
   ## allow optional arguments to augment, e.g. pred.type,
   ## residual.type, re.form ...
   pred <- do.call(stats::predict, args)
-  ret <- dplyr::data_frame(.fitted = pred[, "Estimate"])
+  ret <- dplyr::tibble(.fitted = pred[, "Estimate"])
   if (se.fit) ret[[".se.fit"]] <- pred[, "Est.Error"]
   if (is.null(newdata)) {
     ret[[".resid"]] <- stats::residuals(x)[, "Estimate"]
+    ret <- dplyr::bind_cols(as_tibble(data), ret)
+  } else {
+    ret <- dplyr::bind_cols(as_tibble(newdata), ret)
   }
   return(ret)
 }

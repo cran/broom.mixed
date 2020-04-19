@@ -97,7 +97,7 @@ reorder_frame <- function(x, first_cols = c("effect", "group", "term", "estimate
 
 ## FIXME: store functions to run as a list of expressions,
 ##  allow user-specified 'skip' argument?
-finish_glance <- function(ret = dplyr::data_frame(), x) {
+finish_glance <- function(ret = dplyr::tibble(), x) {
   stopifnot(length(ret) == 0 || nrow(ret) == 1)
 
   ## catch NULL, numeric(0), error responses
@@ -108,7 +108,7 @@ finish_glance <- function(ret = dplyr::data_frame(), x) {
     return(tt)
   }
 
-  newvals <- dplyr::data_frame(
+  newvals <- dplyr::tibble(
     sigma = tfun(sigma(x)),
     logLik = tfun(as.numeric(stats::logLik(x))),
     AIC = tfun(stats::AIC(x)),
@@ -257,4 +257,20 @@ rename_cols <- function(x,
     }
   }
   return(x)
+}
+
+has_rownames <- function(df) {
+  return (!tibble::is_tibble(df) && 
+          any(rownames(df) != as.character(seq(nrow(df)))))
+}
+
+## previously from broom
+## converts to tibble, adding non-trivial rownames and optionally renaming existing columns
+fix_data_frame <- function(df, newnames=NULL, newcol=".rownames") {
+    df <- as.data.frame(df)
+    if (!is.null(newnames)) df <- setNames(df,newnames)
+    if (has_rownames(df)) df <- df %>%
+                              rownames_to_column(var=newcol)
+    df <- as_tibble(df) ## must happen **AFTER** converting rownames
+    return(df)
 }

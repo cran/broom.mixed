@@ -6,24 +6,34 @@
 \alias{augment.lme}
 \alias{glance.lme}
 \alias{tidy.gls}
+\alias{augment.gls}
 \title{Tidying methods for mixed effects models}
 \usage{
-\method{tidy}{lme}(x, effects = c("ran_pars", "fixed"), scales = NULL,
-  conf.int = FALSE, conf.level = 0.95, ...)
+\method{tidy}{lme}(
+  x,
+  effects = c("ran_pars", "fixed"),
+  scales = NULL,
+  conf.int = FALSE,
+  conf.level = 0.95,
+  ...
+)
 
 \method{augment}{lme}(x, data = x$data, newdata, ...)
 
 \method{glance}{lme}(x, ...)
 
 \method{tidy}{gls}(x, conf.int = FALSE, conf.level = 0.95, ...)
+
+\method{augment}{gls}(x, data = nlme::getData(x), newdata, ...)
 }
 \arguments{
 \item{x}{An object of class \code{lme}, such as those from \code{lme}
 or \code{nlme}}
 
-\item{effects}{Either "random" (default) or "fixed"}
+\item{effects}{One or more of "ran_pars", "fixed", "ran_vals", and/or
+"ran_coefs".}
 
-\item{scales}{scales on which to report the variables: for random effects, the choices are \sQuote{"sdcor"} (standard deviations and correlations: the default if \code{scales} is \code{NULL}) or \sQuote{"vcov"} (variances and covariances). \code{NA} means no transformation, appropriate e.g. for fixed effects; inverse-link transformations (exponentiation or logistic) are not yet implemented, but may be in the future.}
+\item{scales}{scales on which to report the variables: for random effects, the choices are \sQuote{"sdcor"} (standard deviations and correlations: the default if \code{scales} is \code{NULL}) or \sQuote{"vcov"} (variances and covariances). \code{NA} means no transformation, appropriate e.g. for fixed effects.}
 
 \item{conf.int}{whether to include a confidence interval}
 
@@ -42,7 +52,7 @@ The structure depends on the method chosen.
 
 \code{tidy} returns one row for each estimated effect, either
 random or fixed depending on the \code{effects} parameter. If
-\code{effects = "random"}, it contains the columns
+\code{effects = "ran_vals"} (or \code{"ran_pars"}), it contains the columns
   \item{group}{the group within which the random effect is being estimated}
   \item{level}{level within group}
   \item{term}{term being estimated}
@@ -99,6 +109,9 @@ if (require("nlme") && require("lme4")) {
     tidy(lmm1)
     tidy(lmm1, effects = "fixed")
     tidy(lmm1, conf.int = TRUE)
+    tidy(lmm1, effects = "ran_pars")
+    tidy(lmm1, effects = "ran_vals")
+    tidy(lmm1, effects = "ran_coefs")
     head(augment(lmm1, sleepstudy))
     glance(lmm1)
 
@@ -117,6 +130,7 @@ if (require("nlme") && require("lme4")) {
                          correlation = corAR1(form = ~ 1 | Mare))
     tidy(gls1)
     glance(gls1)
+    head(augment(gls1))
 }
 
 }

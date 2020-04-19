@@ -30,8 +30,10 @@ context("lme4 models")
       c(
         "(Intercept)", "tx2", "tx3", "tx4", "x",
         "tx2:x", "tx3:x", "tx4:x",
-        "sd__(Intercept)", "sd__x",
-        "cor__(Intercept).x", "sd__Observation"
+        "sd__(Intercept)",
+        "cor__(Intercept).x",
+        "sd__x",
+        "sd__Observation"
       )
     )
   })
@@ -92,9 +94,15 @@ context("lme4 models")
       "unrecognized ran_pars scale"
     )
     t3 <- tidy(fit, effects = "ran_pars", scales = "vcov")
+
+    get_sdvar <- function(x) {
+        (x %>% dplyr::filter(grepl("^(sd|var)",term))
+            %>% dplyr::select(estimate)
+        )}
+    ## ?? need to coerce to data frames: https://github.com/tidyverse/dplyr/issues/2751
     expect_equal(
-      t3$estimate[c(1, 2, 4)],
-      t2$estimate[c(1, 2, 4)]^2
+        as.data.frame(get_sdvar(t3)),
+        as.data.frame(get_sdvar(t2) %>% mutate_all(~.^2))
     )
     expect_error(
       tidy(fit, scales = "vcov"),
@@ -198,14 +206,9 @@ test_that("augment returns a tibble", {
     expect_is(augment(fit), "tbl")
 })
 
-## KEEP THIS LAST to avoid screwing up S3 methods stack
-if (require(lmerTest, quietly = TRUE)) {
-  context("lmerTest")
-  test_that("lmerTest results include p-values", {
-    lmm1X <- lmer(Reaction ~ Days + (Days | Subject), sleepstudy)
-    expect("p.value" %in% names(tidy(lmm1X, effect = "fixed")),
-           "no p value in lmerTest results")
-  })
-  detach("package:lmerTest")
-}
-
+test_that("conf intervals for ranef in correct order", {
+    ## GH 65
+    t1 <- tidy(lmm1,conf.int=TRUE,effect="ran_pars",conf.method="profile",quiet=TRUE)
+    cor_vals <- t1[t1$term=="cor__(Intercept).Days",]
+    expect_true(cor_vals$conf.low>(-1) && cor_vals$conf.high<1)
+})
