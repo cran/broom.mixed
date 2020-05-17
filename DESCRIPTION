@@ -1,7 +1,7 @@
 Package: broom.mixed
 Type: Package
 Title: Tidying Methods for Mixed Models
-Version: 0.2.5
+Version: 0.2.6
 Authors@R: c(
     person("Ben", "Bolker", email = "bolker@mcmaster.ca",
         role = c("aut", "cre"),
@@ -30,19 +30,19 @@ Description: Convert fitted objects from various R mixed-model packages
     data such as predictions, residuals and cluster assignments; and glance(), which
     provides a one-row summary of model-level statistics.
 Imports: broom, dplyr, tidyr, plyr, purrr, tibble, reshape2, nlme,
-        methods, stringr, coda, TMB
+        methods, stringr, coda, TMB, cubelyr
 Suggests: knitr, testthat, ggplot2, Matrix, MCMCglmm, lme4, brms, mgcv,
         gamlss, gamlss.data, lmerTest, pbkrtest, glmmADMB, glmmTMB,
         dotwhisker, pander, R2jags, GLMMadaptive, rstan, rstanarm
 URL: http://github.com/bbolker/broom.mixed
 BugReports: http://github.com/bbolker/broom.mixed/issues
 License: GPL-3
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 Encoding: UTF-8
 Additional_repositories: http://bbolker.github.io/drat
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2020-04-18 16:55:55 UTC; bolker
+Packaged: 2020-05-15 00:54:20 UTC; bolker
 Author: Ben Bolker [aut, cre] (<https://orcid.org/0000-0002-2127-0443>),
   David Robinson [aut],
   Dieter Menne [ctb],
@@ -55,4 +55,4 @@ Author: Ben Bolker [aut, cre] (<https://orcid.org/0000-0002-2127-0443>),
   Eduard Szöcs [ctb] (<https://orcid.org/0000-0001-5376-1194>, BASF SE),
   Indrajeet Patil [ctb]
 Repository: CRAN
-Date/Publication: 2020-04-19 04:50:08 UTC
+Date/Publication: 2020-05-17 07:40:10 UTC

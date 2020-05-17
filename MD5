@@ -1,5 +1,5 @@
-defdd50c10719efc51a1b2bfb75445f1 *DESCRIPTION
-b958e791cda27c568a7adbcc2240eac0 *NAMESPACE
+ac92cdd7dbf81a4443a3349c5fdab0a1 *DESCRIPTION
+397bc285f9c6e3dad22cbdc6d80d2731 *NAMESPACE
 8ac641f0a1b5ae745ed834458698e88b *R/GLMMadaptive_tidiers.R
 0d484a95cb0b6c45cac0d12a4bf03c4c *R/MCMCglmm_prediction.R
 0d570dcf1a2f75178d655c8e76fa9673 *R/MCMCglmm_tidiers.R
@@ -9,17 +9,17 @@ c314502be7d2a64f033b3062fd7bfad2 *R/TMB_tidiers.R
 3f0d3c3d3ea4ad080237234d87dc41a9 *R/glmmADMB_tidiers.R
 ab748b24dd495ec171ee9bb9361bbdbd *R/glmmTMB_tidiers.R
 299c4d5d0d63e97dc25b82548aca9e20 *R/hooks.R
-f385fe79abf7046502ba4ad5ed0ea6b9 *R/lme4_tidiers.R
+35fdf7eaa9f20dda196e0c2fe576bf5a *R/lme4_tidiers.R
 086f29c7b4a9a557a5eca5d33ba786f6 *R/mcmc_tidiers.R
 50221d4f7a7ad392d5aacf4276b80e5a *R/nlme_tidiers.R
 d1180ff5cb37ece4b3b9082242f24b11 *R/pscl_tidiers.R
 b11afd8e7e2761bc17462235ba35b6f1 *R/rstanarm_tidiers.R
 daec1bb0ff861df2f7db07ef1d644ca2 *R/utilities.R
 90330dffe32b7cb24bf2467e02942a62 *build/vignette.rds
-6b363cf94f928c04cab1093f037bc47c *inst/NEWS.Rd
+72d30ffeb9e37b5c31ebb41df773007c *inst/NEWS.Rd
 163dba7d8ccdf875ecfec7fa984302a7 *inst/capabilities.csv
 51eae8f8061f15e49d4ac42715fd9118 *inst/doc/broom_mixed_intro.R
-9c7c921e5fbb08193725ded9f81ec988 *inst/doc/broom_mixed_intro.html
+3d4cda24b41c09ba35f192dbee3ce5a0 *inst/doc/broom_mixed_intro.html
 e5f301974de19adf3eb42d9a69903cdb *inst/doc/broom_mixed_intro.rmd
 5f0bdf0403318871b8fe126f239ca318 *inst/extdata/8schools.stan
 cb916aea6716d44fa6c8b3c007ea5f92 *inst/extdata/MCMCglmm_example.rda
@@ -55,7 +55,7 @@ fc0f0f52a39df0553450ffe63a34adad *man/ranefLevels.Rd
 8fe75c035dcabf2e3b4dd5cf87b0fd65 *man/tidy.TMB.Rd
 93faaa2df78b1826e471c9a13dde816e *man/unrowname.Rd
 fa621d3700b3a1cd8384a1bd54b3bd4d *tests/test-all.R
-1f0c2def93439f73e6b018abe9e19b67 *tests/testthat/helper-checkers.R
+4cc565c5c0b5555143620011eeebb9d1 *tests/testthat/helper-checkers.R
 55108f88178e0a97e870bdfc4e867e49 *tests/testthat/test-alltibbles.R
 99eb6d917809232aec67a9fa55a46e8a *tests/testthat/test-brms.R
 b9234fef96b62a433c754553b28bc7fd *tests/testthat/test-glmmTMB.R
