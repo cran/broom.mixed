@@ -10,7 +10,7 @@
 #' The structure depends on the method chosen.
 #'
 #' @name glmmTMB_tidiers
-#'
+#' @aliases tidy.glmmTMB
 #' @examples
 #' if (require("glmmTMB") && require("lme4")) {
 #'     data("sleepstudy",package="lme4")
@@ -39,7 +39,7 @@
 #'     head(augment(glmm1, cbpp, type.residuals="pearson"))
 #'     glance(glmm1)
 #' \dontrun{
-#' ## profile CIs - a little bit slower but more accurate
+#'     ## profile CIs - a little bit slower but more accurate
 #'     tidy(glmm1, effects = "fixed", conf.int=TRUE, exponentiate=TRUE, conf.method="profile")
 #' }
 #' }
@@ -72,7 +72,6 @@ NULL
 #' @note zero-inflation parameters (including the intercept) are reported
 #' on the logit scale
 #'
-#' @importFrom plyr ldply rbind.fill
 #' @import dplyr
 #' @importFrom tidyr gather spread
 #' @importFrom nlme VarCorr ranef
@@ -128,7 +127,7 @@ tidy.glmmTMB <- function(x, effects = c("ran_pars", "fixed"),
       ss,
       function(x) {
         x %>%
-          as.data.frame(stringsAsFactors = FALSE) %>%
+          as.data.frame() %>%
           setNames(c("estimate", "std.error", "statistic", "p.value")) %>%
           tibble::rownames_to_column("term")
       }
@@ -254,7 +253,9 @@ tidy.glmmTMB <- function(x, effects = c("ran_pars", "fixed"),
     ## fix each group to be a tidy data frame
 
       ret <- (ranef(x, condVar = TRUE)
-        %>% as.data.frame(stringsAsFactors = FALSE)
+        %>% as.data.frame()
+        ## protect against R<4.x, stringsAsFactors=TRUE
+        %>% mutate_if(is.factor, as.character)  
         %>% dplyr::rename(
                        group = grpvar, level = grp,
                        estimate = condval, std.error = condsd

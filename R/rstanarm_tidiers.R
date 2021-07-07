@@ -7,7 +7,7 @@
 #' @return All tidying methods return a \code{data.frame} without rownames.
 #' The structure depends on the method chosen.
 #'
-#' @seealso \code{\link[rstanarm]{summary.stanreg}}
+#' @seealso \code{\link[rstan]{summary,stanfit-method}}
 #'
 #' @name rstanarm_tidiers
 #'
@@ -114,6 +114,7 @@ tidy.stanreg <- function(x,
         }
 
         if (conf.int) {
+
             cifix <- switch(conf.method,
                             HPDinterval= {
                                 m <- as.matrix(x$stanfit)
@@ -204,7 +205,7 @@ tidy.stanreg <- function(x,
         ret_list$ran_vals <- fix_data_frame(vv, newnames = nn, newcol="term")
     }
 
-    return(rbind.fill(ret_list))
+    return(dplyr::bind_rows(ret_list))
 }
 
 

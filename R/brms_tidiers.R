@@ -19,7 +19,8 @@
 #'     brms_crossedRE <- brm(mpg ~ wt + (1|cyl) + (1+wt|gear), data = mtcars,
 #'            iter = 500, chains = 2)
 #'  }
-#'  if (require("brms")) {
+#'  if (.Platform$OS.type!="windows" && require("brms")) {
+#'    ## too slow on Windows, skip (>5 seconds on r-devel-windows)
 #'    ## load stored object
 #'    load(system.file("extdata", "brms_example.rda", package="broom.mixed"))
 #'
@@ -64,8 +65,8 @@ NULL
 #' @param fix.intercept rename "Intercept" parameter to "(Intercept)", to match
 #' behaviour of other model types?
 #' @param looic Should the LOO Information Criterion (and related info) be
-#'   included? See \code{\link[rstanarm]{loo.stanreg}} for details. Note: for
-#'   models fit to very large datasets this can be a slow computation.
+#'   included? See \code{\link[rstan]{loo.stanfit}} for details. (This
+#'   can be slow for models fit to large datasets.)
 #' @param ... Extra arguments, not used
 #' @return
 #' When \code{parameters = NA}, the \code{effects} argument is used
@@ -105,8 +106,14 @@ tidy.brmsfit <- function(x, parameters = NA,
                          conf.method = c("quantile", "HPDinterval"),
                          fix.intercept = TRUE,
                          ...) {
+
+  if (!requireNamespace("brms", quietly=TRUE)) {
+      stop("can't tidy brms objects without brms installed")
+  }
+  xr <- brms::restructure(x)
+  has_ranef <- nrow(xr$ranef)>0
   if (any(grepl("_", rownames(fixef(x)))) ||
-        any(grepl("_", names(ranef(x))))) {
+        (has_ranef && any(grepl("_", names(ranef(x)))))) {
       warning("some parameter names contain underscores: term naming may be unreliable!")
   }
   use_effects <- anyNA(parameters)
@@ -119,7 +126,7 @@ tidy.brmsfit <- function(x, parameters = NA,
       sprintf("%s(%s)", pref, paste(unlist(x), collapse = "|"))
   }
   ## NOT USED:  could use this (or something like) to
-  ##  obviate need for gsub("_","",str_extract(...)) pattern ...  
+  ##  obviate need for gsub("_","",str_extract(...)) pattern ...
   prefs_LB <- list(
       fixed = "b_", ran_vals = "r_",
       ## don't want to remove these pieces, so use look*behind*
@@ -159,7 +166,7 @@ tidy.brmsfit <- function(x, parameters = NA,
         ## t0 <- lapply(resp0,
         ##          function(x) if (length(x)==2) x[1] else x[-(length(x)-1)])
         ## t1 <- lapply(t0,
-        ##          function(x)     
+        ##          function(x)
         ##              case_when(
         ##                  x[[1]]=="b"  ~ sprintf("b%s",x[[2]]),
         ##                  x[[2]]=="sd" ~ sprintf("sd_%s__%s",x[[2]],x[[3]]),
@@ -216,15 +223,16 @@ tidy.brmsfit <- function(x, parameters = NA,
     }
     if ("ran_vals" %in% effects) {
       rterms <- grep(mkRE(prefs$ran_vals), terms, value = TRUE)
-      
+
       vals <- stringr::str_match_all(rterms, "_(.+?)\\[(.+?),(.+?)\\]")
 
       res_list$ran_vals <-
         dplyr::tibble(
-          group = plyr::laply(vals, function (v) { v[[2]] }),
-          term = plyr::laply(vals, function (v) { v[[4]] }),
-          level = plyr::laply(vals, function (v) { v[[3]] })
+          group = purrr::map_chr(vals, function (v) { v[[2]] }),
+          term = purrr::map_chr(vals, function (v) { v[[4]] }),
+          level = purrr::map_chr(vals, function (v) { v[[3]] })
         )
+
     }
     out <- dplyr::bind_rows(res_list, .id = "effect")
     v <- if (fixed.only) seq(nrow(out)) else is.na(out$term)
@@ -247,6 +255,7 @@ tidy.brmsfit <- function(x, parameters = NA,
   out$estimate <- apply(samples, 2, pointfun)
   out$std.error <- apply(samples, 2, stdfun)
   if (conf.int) {
+
     stopifnot(length(conf.level) == 1L)
     probs <- c((1 - conf.level) / 2, 1 - (1 - conf.level) / 2)
     if (conf.method == "HPDinterval") {
@@ -277,8 +286,20 @@ tidy.brmsfit <- function(x, parameters = NA,
   return(out)
 }
 
-#' @rdname brms_tidiers
 
+#' @importFrom stats quantile
+#' @export
+sigma.brmsfit <- function (object, ...)  {
+    if (!("sigma" %in% names(object$fit)))
+        return(1)
+    if (!requireNamespace("rstanarm")) {
+        warning("need to install rstanarm to use extract sigma from brms fits")
+        return(NA)
+    }
+    stats::quantile(as.data.frame(object$fit)[["sigma"]], probs=0.5)
+}
+
+#' @rdname brms_tidiers
 #' @export
 glance.brmsfit <- function(x, looic = FALSE, ...) {
   ## defined in rstanarm_tidiers.R

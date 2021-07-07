@@ -4,9 +4,37 @@
 \title{broom.mixed News}
 \encoding{UTF-8}
 
-\section{CHANGES IN VERSION 0.2.6}{
+\section{CHANGES IN VERSION 0.2.7}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item experimental \code{TMB} tidiers (the \code{TMB} package
+      does not return an object of class \code{TMB}, so users should run
+      \code{class(fit) <- "TMB"} before attempting to tidy)
+    }
+  }
+  \subsection{USER-VISIBLE CHANGES}{
+    \itemize{
+      \item term names are no longer "sanitized" in gamlss tidiers
+      (e.g. "(Intercept)" is not converted to "X.Intercept.")
+      \item gamlss \code{glance} method returns \code{nobs} (GH #113)
+    }
+  }
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item \code{lmerTest} Wald confidence intervals for \code{lmerTest}
+      models now respect \code{ddf.method}
+      \item \code{tidy.glmmTMB(.,effects="ran_vals")} fixed for
+      \code{stringsAsFactors} changes in \code{glmmTMB} (GH #103)
+      \item \code{tidy.gamlss} now works in a wider range of cases
+      (GH #74)
+      \item \code{tidy.brmsfit} works for models without group effects
+      (GH #100)
+    }
+ } 
+}
+\section{CHANGES IN VERSION 0.2.6 (2020-05-17)}{
   \itemize{
-    \item No improvements; compatibility with dplyr 1.0.0
+    \item No improvements; compatibility with dplyr 1.0.0; skip examples
   }
 }
 \section{CHANGES IN VERSION 0.2.5 (2020-04-19)}{
@@ -45,7 +73,6 @@
 	}
       }
 }
-	
 \section{CHANGES IN VERSION 0.2.3}{
   \subsection{BUG FIXES}{
     \itemize{
@@ -124,7 +151,7 @@
       \item The default behaviour of most mixed-model tidiers has
       changed/will gradually be changed to the following
       (description modified from TJ Mahr at
-      \url{https://github.com/tidyverse/broom/issues/96}):
+      \url{https://github.com/tidymodels/broom/issues/96}):
       \itemize{
 	\item Random effect variances and covariances can now be extracted. 
 	\code{effects = "ran_pars"} returns the standard deviations/correlations

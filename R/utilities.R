@@ -1,6 +1,17 @@
 ## most of these are unexported (small) functions from broom;
 ## could be removed if these were exported
 
+
+#' check if a package is available and return informative message otherwise
+#'
+#' @keywords internal
+assert_dependency <- function(library_name) {
+  if (!requireNamespace(library_name, quietly = TRUE)) {
+    stop(sprintf("Please install the %s package.", library_name))
+  }
+}
+
+
 ## https://github.com/klutometis/roxygen/issues/409
 #' @importFrom broom tidy glance augment
 #' @export
@@ -78,10 +89,28 @@ rename_regex_match <- function(x, table = col_matches) {
 }
 
 ## convert confint output to a data frame and relabel columns
-cifun <- function(x, ...) {
-  r <- confint(x, ...) %>%
-    data.frame() %>%
-    setNames(c("conf.low", "conf.high"))
+cifun <- function(x, method="Wald", ddf.method=NULL, level=0.95, ...) {
+  Estimate <- `Std. Error` <- NULL ## global var check
+  ## compute Wald-t estimates if necessary (not handled by confint for lmerTest)
+  if (!is.null(ddf.method)) {
+     if (method != "Wald") warning("ddf.method ignored when conf.method != \"Wald\"")
+     cc <-  as.data.frame(coef(summary(x, ddf=ddf.method)))
+     if (!"df" %in% colnames(cc)) {
+         mult <- qnorm((1 + level) / 2)
+     } else {
+         mult <- stats::qt((1+level)/2, df=cc$df)
+     }
+     r <- (cc
+         %>% transmute(conf.low=Estimate-mult*`Std. Error`,
+                       conf.high=Estimate+mult*`Std. Error`)
+     )
+  }  else {  
+      r <- as.data.frame(confint(x, method=method, level=level, ...))
+  }
+  r <- (r
+      %>% tibble()
+      %>% setNames(c("conf.low", "conf.high"))
+      )
   return(r)
 }
 
@@ -266,11 +295,18 @@ has_rownames <- function(df) {
 
 ## previously from broom
 ## converts to tibble, adding non-trivial rownames and optionally renaming existing columns
-fix_data_frame <- function(df, newnames=NULL, newcol=".rownames") {
-    df <- as.data.frame(df)
+fix_data_frame <- function(df, newnames=NULL, newcol="term") {
+    rn <- rownames(df) ## grab rownames *before* df conversion
+    ## must happen **AFTER** saving rownames
+    df <- as_tibble(df, .name_repair="minimal") 
     if (!is.null(newnames)) df <- setNames(df,newnames)
-    if (has_rownames(df)) df <- df %>%
-                              rownames_to_column(var=newcol)
-    df <- as_tibble(df) ## must happen **AFTER** converting rownames
+    ## add rownames as term **if necessary**
+    if (!("term" %in% newnames) &&
+        !("term" %in% names(df)) &&
+        !is.null(rn)) {
+        df <- tibble(rn,df)
+        names(df)[1] <- newcol
+    }
     return(df)
 }
+

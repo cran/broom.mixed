@@ -2,7 +2,7 @@ options(save.defaults=list(version=2, safe=TRUE))
 
 save_file <- function(..., pkg, type = "rda") {
   f <- file.path("inst", "extdata", sprintf("%s_example.%s", pkg, type))
-  cat("saving in serialization version 2")
+  cat("saving in serialization version 2\n")
   if (type == "rda") {
     save(..., file = f, version=2)
   } else {
@@ -24,6 +24,7 @@ run_pkg <- function(pkg, e) {
 }
 
 
+## formalize via butcher??
 hack_size <- function(x, ...) {
     UseMethod("hack_size")
 }

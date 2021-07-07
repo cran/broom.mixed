@@ -57,8 +57,8 @@ behaviour of other model types?}
 \item{...}{Extra arguments, not used}
 
 \item{looic}{Should the LOO Information Criterion (and related info) be
-included? See \code{\link[rstanarm]{loo.stanreg}} for details. Note: for
-models fit to very large datasets this can be a slow computation.}
+included? See \code{\link[rstan]{loo.stanfit}} for details. (This
+can be slow for models fit to large datasets.)}
 
 \item{data}{data frame}
 
@@ -113,7 +113,8 @@ At present, the components of parameter estimates are separated by parsing the c
     brms_crossedRE <- brm(mpg ~ wt + (1|cyl) + (1+wt|gear), data = mtcars,
            iter = 500, chains = 2)
  }
- if (require("brms")) {
+ if (.Platform$OS.type!="windows" && require("brms")) {
+   ## too slow on Windows, skip (>5 seconds on r-devel-windows)
    ## load stored object
    load(system.file("extdata", "brms_example.rda", package="broom.mixed"))
 

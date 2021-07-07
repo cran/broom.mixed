@@ -7,7 +7,8 @@
 #' @param conf.int whether to return confidence intervals
 #' @param ... arguments passed to \code{confint.gamlss}
 #' @inheritParams lme4_tidiers
-#' 
+#'
+#' @importFrom stats na.omit
 #' @name gamlss_tidiers
 #'
 #' @template boilerplate
@@ -19,7 +20,7 @@
 #'   \item{std.error}{standard error}
 #'   \item{statistic}{t-statistic}
 #'   \item{p.value}{two-sided p-value}
-#' 
+#'
 #' @examples
 #' if (requireNamespace("gamlss", quietly = TRUE) &&
 #'     requireNamespace("gamlss.data", quietly = TRUE)) {
@@ -51,7 +52,7 @@ tidy.gamlss <- function(x, quick = FALSE, conf.int = FALSE, conf.level = 0.95, .
 
   # tidy the coefficients much as would be done for a linear model
   nn <- c("estimate", "std.error", "statistic", "p.value")
-  ret <- fix_data_frame(s, nn)
+  ret <- fix_data_frame(s, nn, newcol="term")
 
   if (conf.int) {
     cilist <- lapply(x$parameters,
@@ -60,15 +61,25 @@ tidy.gamlss <- function(x, quick = FALSE, conf.int = FALSE, conf.level = 0.95, .
     ret <- bind_cols(ret, conf.low=cimat[,1], conf.high=cimat[,2])
   }
   ## add parameter types
-  coefs <- x[paste0(x$parameters,".coefficients")]
+  coefs <- purrr::map(x[paste0(x$parameters,".coefficients")],na.omit)
   parameters <- rep(x$parameters,
                     vapply(coefs,length,1L))
   bind_cols(parameter = parameters, ret)
 }
 
+#' @importFrom stats logLik
 #' @export
-glance.gamlss <- function (x, ...) 
-{
-    ret <- tibble(df = x$df.fit)
-    finish_glance(ret, x)
+glance.gamlss <- function (x, ...) {
+    df <- NULL  ## NSE/global var checker
+    ret <- list()
+    ll <- function(x) c(logLik(x))
+    for (cc in c("ll","AIC","BIC","deviance","df.residual","nobs")) {
+        ret[[cc]] <- do.call(cc,list(x))
+    }
+    ret <- (ret
+        %>% as_tibble()
+        %>% mutate(df = x$df.fit)
+        %>% dplyr::relocate(df, .before="df.residual")
+    )
+    return(ret)
 }
