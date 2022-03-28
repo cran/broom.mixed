@@ -56,6 +56,7 @@ NULL
 #'   than mean and standard deviation, to derive point estimates and uncertainty
 #' @param conf.int If \code{TRUE} columns for the lower (\code{conf.low})
 #' and upper bounds (\code{conf.high}) of posterior uncertainty intervals are included.
+#' @param exponentiate  whether to exponentiate the fixed-effect coefficient estimates and confidence intervals (common for logistic regression); if \code{TRUE}, also scales the standard errors by the exponentiated coefficient, transforming them to the new scale
 #' @param conf.level Defines the range of the posterior uncertainty conf.int,
 #'  such that \code{100 * conf.level}\% of the parameter's posterior distributio
 #'  lies within the corresponding interval.
@@ -97,7 +98,7 @@ NULL
 #' in previous versions of the package), while technically inappropriate in
 #' a Bayesian setting where "fixed" and "random" effects are not well-defined,
 #' are used for compatibility with other (frequentist) mixed model types.
-#' @note At present, the components of parameter estimates are separated by parsing the column names of \code{posterior_samples} (e.g. \code{r_patient[1,Intercept]} for the random effect on the intercept for patient 1, or \code{b_Trt1} for the fixed effect \code{Trt1}. We try to detect underscores in parameter names and warn, but detection may be imperfect.
+#' @note At present, the components of parameter estimates are separated by parsing the column names of \code{as_draws} (e.g. \code{r_patient[1,Intercept]} for the random effect on the intercept for patient 1, or \code{b_Trt1} for the fixed effect \code{Trt1}. We try to detect underscores in parameter names and warn, but detection may be imperfect.
 #' @export
 tidy.brmsfit <- function(x, parameters = NA,
                          effects = c("fixed", "ran_pars"),
@@ -105,8 +106,13 @@ tidy.brmsfit <- function(x, parameters = NA,
                          conf.level = 0.95,
                          conf.method = c("quantile", "HPDinterval"),
                          fix.intercept = TRUE,
+                         exponentiate = FALSE,
                          ...) {
 
+  ## don't check for now - jtools compatibility problem
+  ## check_dots(...)
+
+  std.error <- NULL ## NSE/code check
   if (!requireNamespace("brms", quietly=TRUE)) {
       stop("can't tidy brms objects without brms installed")
   }
@@ -145,7 +151,7 @@ tidy.brmsfit <- function(x, parameters = NA,
 
     parameters <- pref_RE
   }
-  samples <- brms::posterior_samples(x, parameters)
+  samples <- get_draws(x, parameters)
   if (is.null(samples)) {
     stop("No parameter name matches the specified pattern.",
       call. = FALSE
@@ -272,6 +278,14 @@ tidy.brmsfit <- function(x, parameters = NA,
                                     grepl("^disp",out$term) ~ "disp",
                                     TRUE ~ "cond")
 
+  if (exponentiate) {
+    vv <- c("estimate", "conf.low", "conf.high")
+    out <- (out
+      %>% mutate(across(contains(vv)), exp)
+      %>% mutate(across(std.error, ~ . * estimate))
+    )
+  }
+
   out$term <- stringr::str_remove(out$term,mkRE(prefs[["components"]],
                                                 LB=TRUE))
   if (fix.intercept) {
@@ -332,4 +346,10 @@ augment.brmsfit <- function(x, data = stats::model.frame(x), newdata = NULL,
     ret <- dplyr::bind_cols(as_tibble(newdata), ret)
   }
   return(ret)
+}
+
+## utility to replace posterior_samples
+get_draws <- function(obj, vars) {
+  ## need to unclass as_draws() to convince bind_rows to stick it together ...
+  dplyr::bind_rows(unclass(brms::as_draws(obj, vars, regex = TRUE)))
 }

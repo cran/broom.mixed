@@ -27,15 +27,15 @@ See the Value section for details.}
 
 \item{conf.int}{If \code{TRUE} columns for the lower (\code{conf.low}) and upper (\code{conf.high}) bounds of the
 \code{100*prob}\% posterior uncertainty intervals are included. See
-\code{\link[rstanarm]{posterior_interval.stanreg}} for details.}
+\code{\link[rstantools]{posterior_interval}} for details.}
 
-\item{conf.level}{See \code{\link[rstanarm]{posterior_interval.stanreg}}.}
+\item{conf.level}{See \code{\link[rstantools]{posterior_interval}}.}
 
 \item{conf.method}{method for computing confidence intervals
 ("quantile" or "HPDinterval")}
 
 \item{...}{For \code{glance}, if \code{looic=TRUE}, optional arguments to
-\code{\link[rstanarm]{loo.stanreg}}.}
+\code{\link[rstan]{loo.stanfit}}.}
 
 \item{looic}{Should the LOO Information Criterion (and related info) be
 included? See \code{\link[rstan]{loo.stanfit}} for details. (This
@@ -86,8 +86,9 @@ SD, R^2, and log(fit_ratio), etc.
   \item{p_loo}{The effective number of parameters.}
 }
 \description{
-These methods tidy the estimates from \code{\link[rstanarm]{stanreg-objects}}
-(fitted model objects from the \pkg{rstanarm} package) into a summary.
+These methods tidy the estimates from \code{rstanarm} fits
+(\code{stan_glm}, \code{stan_glmer}, etc.)
+into a summary.
 }
 \examples{
 

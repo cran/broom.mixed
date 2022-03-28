@@ -1,8 +1,8 @@
 #' Tidying methods for an rstanarm model
 #'
-#' These methods tidy the estimates from \code{\link[rstanarm]{stanreg-objects}}
-#' (fitted model objects from the \pkg{rstanarm} package) into a summary.
-#'
+#' These methods tidy the estimates from \code{rstanarm} fits
+#' (\code{stan_glm}, \code{stan_glmer}, etc.)
+#' into a summary.
 #'
 #' @return All tidying methods return a \code{data.frame} without rownames.
 #' The structure depends on the method chosen.
@@ -44,10 +44,10 @@ NULL
 
 #' @rdname rstanarm_tidiers
 #' @inheritParams brms_tidiers
-#' @param conf.level See \code{\link[rstanarm]{posterior_interval.stanreg}}.
+#' @param conf.level See \code{\link[rstantools]{posterior_interval}}.
 #' @param conf.int If \code{TRUE} columns for the lower (\code{conf.low}) and upper (\code{conf.high}) bounds of the
 #'   \code{100*prob}\% posterior uncertainty intervals are included. See
-#'   \code{\link[rstanarm]{posterior_interval.stanreg}} for details.
+#'   \code{\link[rstantools]{posterior_interval}} for details.
 #'
 #' @return
 #' When \code{effects="fixed"} (the default), \code{tidy.stanreg} returns
@@ -212,7 +212,7 @@ tidy.stanreg <- function(x,
 #' @rdname rstanarm_tidiers
 #'
 #' @param ... For \code{glance}, if \code{looic=TRUE}, optional arguments to
-#'   \code{\link[rstanarm]{loo.stanreg}}.
+#'   \code{\link[rstan]{loo.stanfit}}.
 #' @return \code{glance} returns one row with the columns
 #'   \item{algorithm}{The algorithm used to fit the model.}
 #'   \item{pss}{The posterior sample size (except for models fit using
