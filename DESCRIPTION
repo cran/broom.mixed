@@ -1,7 +1,7 @@
 Package: broom.mixed
 Type: Package
 Title: Tidying Methods for Mixed Models
-Version: 0.2.9.3
+Version: 0.2.9.4
 Authors@R: c(
     person("Ben", "Bolker", email = "bolker@mcmaster.ca",
         role = c("aut", "cre"),
@@ -49,7 +49,7 @@ Additional_repositories: http://bbolker.github.io/drat
 VignetteBuilder: knitr
 RoxygenNote: 7.1.2
 NeedsCompilation: no
-Packaged: 2022-03-27 23:56:06 UTC; bolker
+Packaged: 2022-03-30 13:56:50 UTC; bolker
 Author: Ben Bolker [aut, cre] (<https://orcid.org/0000-0002-2127-0443>),
   David Robinson [aut],
   Dieter Menne [ctb],
@@ -65,4 +65,4 @@ Author: Ben Bolker [aut, cre] (<https://orcid.org/0000-0002-2127-0443>),
   Bill Denney [ctb],
   Cory Brunson [ctb]
 Repository: CRAN
-Date/Publication: 2022-03-28 13:00:02 UTC
+Date/Publication: 2022-04-17 17:42:29 UTC

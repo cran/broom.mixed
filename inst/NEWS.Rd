@@ -4,6 +4,11 @@
 \title{broom.mixed News}
 \encoding{UTF-8}
 
+\section{CHANGES IN VERSION 0.2.9.4}{
+  \itemize{
+    \item minor changes only; test tweaks for CRAN compatibility
+  }
+}
 \section{CHANGES IN VERSION 0.2.9.3}{
   \subsection{BUG FIXES}{
     \itemize{

@@ -2,9 +2,9 @@
 library(knitr)
 
 ## ----dwplot1,message=FALSE,warning=FALSE--------------------------------------
-library("dplyr")
-library("tidyr")
-library("broom.mixed")
+library(dplyr)
+library(tidyr)
+library(broom.mixed)
 if (require("brms") && require("dotwhisker") && require("ggplot2")) {
     L <- load(system.file("extdata", "brms_example.rda", package="broom.mixed"))
     gg0 <- (tidy(brms_crossedRE)
@@ -17,8 +17,11 @@ if (require("brms") && require("dotwhisker") && require("ggplot2")) {
     gg0 + geom_vline(xintercept=0,lty=2)
 }
 
-## ----results="asis",echo=FALSE, message=FALSE---------------------------------
-cc <- read.csv(system.file("capabilities.csv",package="broom.mixed"))
+## ----get_methods--------------------------------------------------------------
+get_methods()
+
+## ----capabilities, results="asis",echo=FALSE, message=FALSE-------------------
+cc <- read.csv(system.file("capabilities.csv", package="broom.mixed"))
 if (require("pander")) {
     pander::pander(cc,split.tables=Inf)
 }

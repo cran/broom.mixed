@@ -1,4 +1,4 @@
-2076cb8d54c0568428b8353f336b4de6 *DESCRIPTION
+80973b8bc911414ddf9d574d4dee1dae *DESCRIPTION
 3217419248282e049621aca6736e171d *NAMESPACE
 8ac641f0a1b5ae745ed834458698e88b *R/GLMMadaptive_tidiers.R
 d73bce36145a2e55fb29db8c44cdfe2d *R/MCMCglmm_prediction.R
@@ -16,11 +16,11 @@ d1180ff5cb37ece4b3b9082242f24b11 *R/pscl_tidiers.R
 eed52e451723923a5194e4863646388c *R/rstanarm_tidiers.R
 d73c7639e8e0484e4cfef1515aed2921 *R/utilities.R
 bc1b7619fbe2decfb863319b9c886e2e *build/vignette.rds
-2a63d3e117399dcfbd736c87a06c6220 *inst/NEWS.Rd
+5cdcc7d8f6961f5c7e7bc2ffe155d336 *inst/NEWS.Rd
 163dba7d8ccdf875ecfec7fa984302a7 *inst/capabilities.csv
-51eae8f8061f15e49d4ac42715fd9118 *inst/doc/broom_mixed_intro.R
-72a7465c8785c6fadc52fb72920e85ba *inst/doc/broom_mixed_intro.html
-e5f301974de19adf3eb42d9a69903cdb *inst/doc/broom_mixed_intro.rmd
+c25f41cc46a867fa80b6005269133f2f *inst/doc/broom_mixed_intro.R
+c2600f518e9c9eff031d572901cf4060 *inst/doc/broom_mixed_intro.html
+07939ff9459c4bbfd5579890e6678eab *inst/doc/broom_mixed_intro.rmd
 5f0bdf0403318871b8fe126f239ca318 *inst/extdata/8schools.stan
 a7561fa019c5f9ca6fcb099f0d807bec *inst/extdata/MCMCglmm_example.rda
 ddbb49c4ec7af4d25360be5f87e949fa *inst/extdata/R2jags_example.rds
@@ -63,10 +63,10 @@ ef8102f457e41dba73ea1d6c9eb5f958 *tests/testthat/test-TMB.R
 196a72a27412e94e965aab775c68eed0 *tests/testthat/test-alltibbles.R
 566a63b5f4133b3a5e332e22905d48bc *tests/testthat/test-brms.R
 1aac9499b3e8795d6c26d725dbb05efb *tests/testthat/test-gamlss.R
-849f96b52021aab788c12b996da3801e *tests/testthat/test-glmmTMB.R
+ea03127ec5af98b1921a2cd6a4cf2a6a *tests/testthat/test-glmmTMB.R
 4de5a2a1350d8d1dde2b0c7a8d69651c *tests/testthat/test-lme4.R
 4276925c1c0aaa7d6ee5954e4e1b89e5 *tests/testthat/test-lmertest.R
 86b14da068a176e858a8b86c0ef95dd3 *tests/testthat/test-mcmc.R
 39f3b77a76f7e3f3e395e9f88da63c8a *tests/testthat/test-nlme.R
 51e51ad598da17e0eb60a927ca8b4916 *tests/testthat/test-rstanarm.R
-e5f301974de19adf3eb42d9a69903cdb *vignettes/broom_mixed_intro.rmd
+07939ff9459c4bbfd5579890e6678eab *vignettes/broom_mixed_intro.rmd
