@@ -19,8 +19,8 @@
 #'     brms_crossedRE <- brm(mpg ~ wt + (1|cyl) + (1+wt|gear), data = mtcars,
 #'            iter = 500, chains = 2)
 #'  }
-#'  if (.Platform$OS.type!="windows" && require("brms")) {
-#'    ## too slow on Windows, skip (>5 seconds on r-devel-windows)
+#'  \donttest{
+#'    ## too slow for CRAN (>5 seconds)
 #'    ## load stored object
 #'    load(system.file("extdata", "brms_example.rda", package="broom.mixed"))
 #'
@@ -30,6 +30,9 @@
 #'    tidy(fit, effects = "fixed", conf.method="HPDinterval")
 #'    tidy(fit, effects = "ran_vals")
 #'    tidy(fit, effects = "ran_pars", robust = TRUE)
+#'    if (require("posterior")) {
+#'      tidy(fit, effects = "ran_pars", rhat = TRUE, ess = TRUE)
+#'    }
 #'    # glance method
 #'    glance(fit)
 #'    ## this example will give a warning that it should be run with
@@ -63,6 +66,10 @@ NULL
 #'  Only used if \code{conf.int = TRUE}.
 #' @param conf.method method for computing confidence intervals
 #' ("quantile" or "HPDinterval")
+#' @param rhat whether to calculate the *Rhat* convergence metric
+#' (\code{FALSE} by default)
+#' @param ess whether to calculate the *effective sample size* (ESS) convergence metric
+#' (\code{FALSE} by default)
 #' @param fix.intercept rename "Intercept" parameter to "(Intercept)", to match
 #' behaviour of other model types?
 #' @param looic Should the LOO Information Criterion (and related info) be
@@ -102,15 +109,15 @@ NULL
 #' @export
 tidy.brmsfit <- function(x, parameters = NA,
                          effects = c("fixed", "ran_pars"),
-                         robust = FALSE, conf.int = TRUE,
-                         conf.level = 0.95,
+                         robust = FALSE,
+                         conf.int = TRUE, conf.level = 0.95,
                          conf.method = c("quantile", "HPDinterval"),
+                         rhat = FALSE, ess = FALSE,
                          fix.intercept = TRUE,
                          exponentiate = FALSE,
                          ...) {
 
-  ## don't check for now - jtools compatibility problem
-  ## check_dots(...)
+  check_dots(...)
 
   std.error <- NULL ## NSE/code check
   if (!requireNamespace("brms", quietly=TRUE)) {
@@ -138,26 +145,27 @@ tidy.brmsfit <- function(x, parameters = NA,
       ## don't want to remove these pieces, so use look*behind*
       ran_pars =   sprintf("(?<=(%s))", c("sd_", "cor_", "sigma")),
       components = sprintf("(?<=%s)", c("zi_","disp_"))
-    )
-    prefs <- list(
+  )
+  prefs <- list(
       fixed = "b_", ran_vals = "r_",
       ## no lookahead (doesn't work with grep[l])
       ran_pars = c("sd_", "cor_", "sigma"),
       components = c("zi_", "disp_")
-    )
-    pref_RE <- mkRE(prefs[effects])
+  )
+  pref_RE <- mkRE(prefs[effects])
   if (use_effects) {
     ## prefixes distinguishing fixed, random effects
 
     parameters <- pref_RE
   }
-  samples <- get_draws(x, parameters)
-  if (is.null(samples)) {
+  samples_perchain <- brms::as_draws_array(x, parameters, regex = TRUE)
+  if (is.null(samples_perchain) || posterior::nvariables(samples_perchain) == 0) {
     stop("No parameter name matches the specified pattern.",
       call. = FALSE
     )
   }
-  terms <- names(samples)
+  samples <- brms::as_draws_matrix(samples_perchain)
+  terms <- colnames(samples)
   if (use_effects) {
       if (is.multiresp) {
         if ("ran_pars" %in% effects && any(grepl("^sd",terms))) {
@@ -241,6 +249,14 @@ tidy.brmsfit <- function(x, parameters = NA,
 
     }
     out <- dplyr::bind_rows(res_list, .id = "effect")
+    # In the case where nrow(res_list$fixed) > 0 but nrow(res_list$ran_pars) == 0,
+    # the out object needs to be fixed a bit (replace columns with unexpected
+    # lists of NULL by expected vectors of NA).
+    for (col in c("group", "term")) {
+      if (is.list(out[[col]]) && all(sapply(out[[col]], is.null))) {
+        out[[col]] <- rep(NA, nrow(out))
+      }
+    }
     v <- if (fixed.only) seq(nrow(out)) else is.na(out$term)
     newterms <- stringr::str_remove(terms[v], mkRE(prefs[c("fixed")]))
     if (fixed.only) {
@@ -254,7 +270,7 @@ tidy.brmsfit <- function(x, parameters = NA,
     ## prefixes already removed for ran_vals; don't remove for ran_pars
   } else {
     ## if !use_effects
-    out <- dplyr::tibble(term = names(samples))
+    out <- dplyr::tibble(term = terms)
   }
   pointfun <- if (robust) stats::median else base::mean
   stdfun <- if (robust) stats::mad else stats::sd
@@ -272,6 +288,20 @@ tidy.brmsfit <- function(x, parameters = NA,
     out$conf.low <- cc[,1]
     out$conf.high <- cc[,2]
   }
+  posterior_metrics <- c()
+  if (rhat) {
+    posterior_metrics <- c(posterior_metrics, rhat = posterior::rhat)
+  }
+  if (ess) {
+    posterior_metrics <- c(posterior_metrics, ess = posterior::ess_basic)
+  }
+  if (length(posterior_metrics) > 0) {
+    if (!requireNamespace("posterior", quietly=TRUE)) {
+        stop(paste0(paste0(names(posterior_metrics), collapse=", "),
+             " calculation for brmsfit objects requires posterior package"))
+    }
+    out[names(posterior_metrics)] <- posterior::summarise_draws(samples_perchain, posterior_metrics)[names(posterior_metrics)]
+  }
   ## figure out component
   out$component <- dplyr::case_when(grepl("(^|_)zi",out$term) ~ "zi",
                                     ## ??? is this possible in brms models
@@ -281,7 +311,7 @@ tidy.brmsfit <- function(x, parameters = NA,
   if (exponentiate) {
     vv <- c("estimate", "conf.low", "conf.high")
     out <- (out
-      %>% mutate(across(contains(vv)), exp)
+      %>% mutate(across(contains(vv), exp))
       %>% mutate(across(std.error, ~ . * estimate))
     )
   }
@@ -304,13 +334,9 @@ tidy.brmsfit <- function(x, parameters = NA,
 #' @importFrom stats quantile
 #' @export
 sigma.brmsfit <- function (object, ...)  {
-    if (!("sigma" %in% names(object$fit)))
+    if (!("sigma" %in% brms::variables(object)))
         return(1)
-    if (!requireNamespace("rstanarm")) {
-        warning("need to install rstanarm to use extract sigma from brms fits")
-        return(NA)
-    }
-    stats::quantile(as.data.frame(object$fit)[["sigma"]], probs=0.5)
+    stats::quantile(brms::as_draws_array(object, "sigma"), probs=0.5)
 }
 
 #' @rdname brms_tidiers
@@ -346,10 +372,4 @@ augment.brmsfit <- function(x, data = stats::model.frame(x), newdata = NULL,
     ret <- dplyr::bind_cols(as_tibble(newdata), ret)
   }
   return(ret)
-}
-
-## utility to replace posterior_samples
-get_draws <- function(obj, vars) {
-  ## need to unclass as_draws() to convince bind_rows to stick it together ...
-  dplyr::bind_rows(unclass(brms::as_draws(obj, vars, regex = TRUE)))
 }

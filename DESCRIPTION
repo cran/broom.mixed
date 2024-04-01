@@ -1,13 +1,13 @@
 Package: broom.mixed
 Type: Package
 Title: Tidying Methods for Mixed Models
-Version: 0.2.9.4
+Version: 0.2.9.5
 Authors@R: c(
     person("Ben", "Bolker", email = "bolker@mcmaster.ca",
         role = c("aut", "cre"),
         comment=c(ORCID="0000-0002-2127-0443")),
     person("David", "Robinson", email = "admiral.david@gmail.com",
-    	role = "aut"),
+        role = "aut"),
     person("Dieter", "Menne", role = "ctb"),
     person("Jonah", "Gabry", role = "ctb"),
     person("Paul", "Buerkner", role = "ctb"),
@@ -20,12 +20,16 @@ Authors@R: c(
     person("Eduard", "Szöcs", role = "ctb",
        comment=c(ORCID = "0000-0001-5376-1194", sponsor = "BASF SE")),
     person("Indrajeet", "Patil", role="ctb"),
-    person("Vincent", "Arel-Bundock", 
-          email = "vincent.arel-bundock@umontreal.ca", 
+    person("Vincent", "Arel-Bundock",
+          email = "vincent.arel-bundock@umontreal.ca",
           role = "ctb",
       comment = c(ORCID = "0000-0003-2042-7063")),
     person("Bill", "Denney", role = "ctb"),
-    person("Cory", "Brunson", role = "ctb")
+    person("Cory", "Brunson", role = "ctb"),
+    person("Joe", "Wasserman", role = "ctb",
+        comment = c(ORCID = "0000-0002-9705-1853")),
+    person("Alexey", "Stukalov", role = "ctb"),
+    person("Matthieu", "Bruneaux", role = "ctb")
     )
 Maintainer: Ben Bolker <bolker@mcmaster.ca>
 Description: Convert fitted objects from various R mixed-model packages
@@ -39,17 +43,17 @@ Imports: broom, coda, dplyr, forcats, methods, nlme, purrr, stringr,
         tibble, tidyr, furrr
 Suggests: brms, dotwhisker, knitr, testthat, gamlss, gamlss.data,
         ggplot2, GLMMadaptive, glmmADMB, glmmTMB, lmerTest, lme4,
-        Matrix, MCMCglmm, mgcv, pander, pbkrtest, rstan, rstanarm,
-        rstantools, R2jags, TMB, rmarkdown
+        Matrix, MCMCglmm, mediation, mgcv, pander, pbkrtest, posterior,
+        rstan, rstanarm, rstantools, R2jags, TMB, rmarkdown
 URL: https://github.com/bbolker/broom.mixed
 BugReports: https://github.com/bbolker/broom.mixed/issues
 License: GPL-3
 Encoding: UTF-8
 Additional_repositories: http://bbolker.github.io/drat
 VignetteBuilder: knitr
-RoxygenNote: 7.1.2
+RoxygenNote: 7.3.1
 NeedsCompilation: no
-Packaged: 2022-03-30 13:56:50 UTC; bolker
+Packaged: 2024-03-31 23:17:41 UTC; bolker
 Author: Ben Bolker [aut, cre] (<https://orcid.org/0000-0002-2127-0443>),
   David Robinson [aut],
   Dieter Menne [ctb],
@@ -63,6 +67,9 @@ Author: Ben Bolker [aut, cre] (<https://orcid.org/0000-0002-2127-0443>),
   Indrajeet Patil [ctb],
   Vincent Arel-Bundock [ctb] (<https://orcid.org/0000-0003-2042-7063>),
   Bill Denney [ctb],
-  Cory Brunson [ctb]
+  Cory Brunson [ctb],
+  Joe Wasserman [ctb] (<https://orcid.org/0000-0002-9705-1853>),
+  Alexey Stukalov [ctb],
+  Matthieu Bruneaux [ctb]
 Repository: CRAN
-Date/Publication: 2022-04-17 17:42:29 UTC
+Date/Publication: 2024-04-01 08:30:06 UTC

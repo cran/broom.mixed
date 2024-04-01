@@ -26,6 +26,7 @@
 #'     tidy(lmm1)
 #'     tidy(lmm1, effects = "fixed")
 #'     tidy(lmm1, conf.int = TRUE)
+#'     tidy(lmm1, conf.int = TRUE, conf.level = 0.8)
 #'     tidy(lmm1, effects = "ran_pars")
 #'     tidy(lmm1, effects = "ran_vals")
 #'     tidy(lmm1, effects = "ran_coefs")
@@ -117,7 +118,7 @@ tidy.lme <- function(x, effects = c("var_model", "ran_pars", "fixed"),
       rename_regex_match() %>%
       tibblify("term")
     if (conf.int) {
-      cifix <- intervals(x, which = "fixed")[["fixed"]] %>%
+      cifix <- intervals(x, level = conf.level, which = "fixed")[["fixed"]] %>%
         data.frame() %>%
         dplyr::select(lower, upper) %>%
         setNames(c("conf.low", "conf.high")) %>%
@@ -202,7 +203,7 @@ tidy.lme <- function(x, effects = c("var_model", "ran_pars", "fixed"),
       )
 
       if (conf.int) {
-        ii <- intervals(x, which = "var-cov")$reStruct
+        ii <- intervals(x, level = conf.level, which = "var-cov")$reStruct
         trfun <- function(z) {
           nm <- rownames(z)
           nm <- sub(
@@ -231,6 +232,8 @@ tidy.lme <- function(x, effects = c("var_model", "ran_pars", "fixed"),
           ci$conf.low <- ci$conf.high <- NA
         }
         ## FIXME: also do confint on residual
+        ## (Once FIXED, also FIX the test "tidy works on nlme/lme fits" in test
+        ## file tests/testthat/test-nlme.R, see FIXME note in the test itself).
         ret <- dplyr::full_join(ret, ci, by = c("group", "term"))
       }
     } ## if not multi-level model
@@ -311,20 +314,33 @@ augment.lme <- function(x, data = x$data, newdata, ...) {
 }
 
 
+#' @importFrom dplyr across mutate
 #' @export
-as.data.frame.ranef.lme <- function(x, row.names, optional, ...) {
+as.data.frame.ranef.lme <- function(x, row.names, optional=TRUE,
+                                    stringsAsFactors = FALSE, ...) {
+  where <- NULL
+  ## see https://github.com/r-lib/tidyselect/issues/201
+  ## this is better than utils::globalVariables() which is global ...
+
     group <- term <- level <- estimate <- NULL ## NSE arg checking
     if (!missing(row.names)) stop(sQuote("row.names"),
                                   "  argument not implemented")
-    if (!missing(optional)) stop(sQuote("optional"),
-                                 " argument not implemented")
     if (length(list(...)>0)) warning("additional arguments ignored")
-    melt <- function(x) purrr::map_dfr(as.list(x), ~tibble(level = rownames(x), estimate = .), .id = "term")
+    ## see ?as.data.frame: optional==FALSE corresponds to check.names==TRUE
+    ## "check_unique" is the tibble default, "universal" behaves like
+    ##  check.names == TRUE
+    name_repair <- if (optional) "check_unique" else "universal"
+    melt <- function(x) purrr::map_dfr(as.list(x),
+                 ~tibble(level = rownames(x), estimate = .), .id = "term")
     grps <- attr(x, "grpNames")
     if (length(grps)==1) x <- list(x)
     mm <- purrr::map(x, melt)
-    purrr::map2_dfr(.x = mm, .y = grps, ~mutate(.x, group = .y)) %>%
-        dplyr::select(group, term, level, estimate)
+    res <- purrr::map2_dfr(.x = mm, .y = grps, ~mutate(.x, group = .y)) %>%
+      dplyr::select(group, term, level, estimate)
+    if (stringsAsFactors) {
+      res <- res %>% dplyr::mutate(across(where(is.character), as.factor))
+    }
+    return(res)
 }
 
 #' @rdname nlme_tidiers
@@ -405,9 +421,9 @@ augment.gls <- function(x, data = nlme::getData(x), newdata, ...) {
 # varFunc tidiers ####
 
 #' Tidy variance structure for the \code{nlme} package.
-#' 
+#'
 #' Returns a tibble with the following columns:
-#' \itemize{
+#' \describe{
 #' \item{group}{type of varFunc, along with the right hand side of the formula
 #'   in parentheses e.g. \code{"varExp(age | Sex)"}.}
 #' \item{term}{terms included in the formula of the variance model, specifically
@@ -434,7 +450,7 @@ augment.gls <- function(x, data = nlme::getData(x), newdata, ...) {
 #'     median(as.integer(ChickWeight_arbitrary_group$Chick))
 #'   )
 #' ChickWeight_arbitrary_group$group_arb <- c("low", "high")[ChickWeight_arbitrary_group$group_arb_n]
-#' 
+#'
 #' fit_with_fixed <-
 #'   lme(
 #'     weight ~ Diet * Time,
@@ -456,7 +472,7 @@ tidy.varFunc <- function(x, ...) {
   aux <- coef(x, unconstrained = FALSE, allCoef = TRUE)
   if (length(aux) == 0) {
     warning(
-      "Variance function structure of class", class(x)[1], 
+      "Variance function structure of class", class(x)[1],
       "with no parameters, or uninitialized"
     )
     return(tibble::tibble())

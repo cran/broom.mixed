@@ -103,8 +103,21 @@ tidy.glmmTMB <- function(x, effects = c("ran_pars", "fixed"),
                          exponentiate = FALSE,
                          ...) {
 
-  ## FIXME:  cleanup
-  ##   - avoid (as.)data.frame
+    safe_confint <- function(..., s_component = NULL) {
+        args <- list(...)
+        if (packageVersion("glmmTMB") >= "1.1.4" && conf.method != "tmbroot") {
+            ## FIXME: check/make tmbroot handle nonest properly?
+            args <- c(args, list(include_nonest = TRUE))
+        }
+        res <- do.call(confint, args)
+        if (!is.null(s_component)) {
+            re <- sprintf("^(%s)", paste(s_component, collapse = "|"))
+            res <- res[grepl(re, rownames(res)),]
+        }
+        return(res)
+    }
+    ## FIXME:  cleanup
+    ##   - avoid (as.)data.frame
 
   ## R CMD check false positives
   condsd <- condval <- grp <- grpvar <-
@@ -148,25 +161,25 @@ tidy.glmmTMB <- function(x, effects = c("ran_pars", "fixed"),
     # p-values may or may not be included
     # HACK: use the columns from the conditional component, preserving previous behaviour
     if (conf.int) {
-      for (comp in component) {
-        cifix <- confint(x,
-          method = tolower(conf.method),
-          level = conf.level,
-          component = comp,
-          estimate = FALSE,
-          ## conditional/zi components
-          ## include random-effect parameters
-          ## as well, don't want those right now ...
-          parm = seq(nrow(ret[[comp]])), ...
-        ) %>%
-          as.data.frame(stringsAsFactors = FALSE) %>%
-          setNames(c("conf.low", "conf.high"))
-        ret[[comp]] <- bind_cols(
-          ret[[comp]],
-          cifix
-        )
-      }
-    }
+        for (comp in component) {
+            cifix <- safe_confint(x,
+                            method = tolower(conf.method),
+                            level = conf.level,
+                            component = comp,
+                            estimate = FALSE,
+                            ## conditional/zi components
+                            ## include random-effect parameters
+                            ## as well, don't want those right now ...
+                            parm = seq(nrow(ret[[comp]])),
+                            ...) %>%
+                as.data.frame(stringsAsFactors = FALSE) %>%
+                setNames(c("conf.low", "conf.high"))
+            ret[[comp]] <- bind_cols(
+                ret[[comp]],
+                cifix
+            )
+        } ## component
+    } ## conf.int
     ret_list$fixed <- bind_rows(ret, .id = "component")
 
     if (exponentiate) {
@@ -219,6 +232,7 @@ tidy.glmmTMB <- function(x, effects = c("ran_pars", "fixed"),
     ## DRY! refactor glmmTMB/lme4 tidiers
 
     ## don't try to assign as rowname (non-unique anyway),
+    ## FIXME - now unique: use more directly?
     ## make it directly into a term column
     if (nrow(ret)>0) {
         ret[["term"]] <- apply(ret[c("var1", "var2")], 1,
@@ -246,17 +260,28 @@ tidy.glmmTMB <- function(x, effects = c("ran_pars", "fixed"),
         if (utils::packageVersion("glmmTMB")<="0.2.2.0") {
              thpar <- which(names(x$obj$par)=="theta")
         }
-        ciran <- (confint(x,
+        ciran_t <- safe_confint(x,
                           ## for next glmmTMB (> 0.2.3) can be "theta_",
                           parm = thpar,
                           method = conf.method,
                           level = conf.level,
                           estimate = FALSE,
+                          ...,
+                          s_component = component
+                          )
+        ciran_s <- safe_confint(x,
+                          parm = "sigma",
+                          method = conf.method,
+                          level = conf.level,
+                          estimate = FALSE,
                           ...
+                          )
+      ciran <-  (rbind(ciran_t, ciran_s)
+          %>% as_tibble()
+          %>% setNames(c("conf.low", "conf.high"))
       )
-      %>% as_tibble()
-      %>% setNames(c("conf.low", "conf.high"))
-      )
+      ## HACK: make sure that sigma is/is not included consistently??
+      ciran <- ciran[1:nrow(ret),]
       ret <- bind_cols(ret, ciran)
     }
     ret_list$ran_pars <- ret
