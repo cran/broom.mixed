@@ -22,17 +22,21 @@
 #'  \donttest{
 #'    ## too slow for CRAN (>5 seconds)
 #'    ## load stored object
-#'    load(system.file("extdata", "brms_example.rda", package="broom.mixed"))
+#'    if (require("rstan") && require("brms")) {
+#'       load(system.file("extdata", "brms_example.rda", package="broom.mixed"))
 #'
-#'    fit <- brms_crossedRE
-#'    tidy(fit)
-#'    tidy(fit, parameters = "^sd_", conf.int = FALSE)
-#'    tidy(fit, effects = "fixed", conf.method="HPDinterval")
-#'    tidy(fit, effects = "ran_vals")
-#'    tidy(fit, effects = "ran_pars", robust = TRUE)
-#'    if (require("posterior")) {
-#'      tidy(fit, effects = "ran_pars", rhat = TRUE, ess = TRUE)
+#'       fit <- brms_crossedRE
+#'       tidy(fit)
+#'       tidy(fit, parameters = "^sd_", conf.int = FALSE)
+#'       tidy(fit, effects = "fixed", conf.method="HPDinterval")
+#'       tidy(fit, effects = "ran_vals")
+#'       tidy(fit, effects = "ran_pars", robust = TRUE)
+#'       if (require("posterior")) {
+#'       tidy(fit, effects = "ran_pars", rhat = TRUE, ess = TRUE)
+#'    
 #'    }
+#'    }
+#'    if (require("rstan") && require("brms")) {
 #'    # glance method
 #'    glance(fit)
 #'    ## this example will give a warning that it should be run with
@@ -40,6 +44,7 @@
 #'    ## because the \code{fit} object has been stripped down to save space
 #'    suppressWarnings(glance(fit, looic = TRUE, cores = 1))
 #'    head(augment(fit))
+#'   }
 #' }
 #'
 NULL
@@ -118,7 +123,10 @@ tidy.brmsfit <- function(x, parameters = NA,
                          ...) {
 
   check_dots(...)
-
+  bad_effects <- setdiff(effects, c("fixed", "ran_pars", "ran_vals", "ran_coefs"))
+  if (length(bad_effects)>0) {
+      stop("unrecognized effects: ", paste(bad_effects, collapse = ", "))
+  }
   std.error <- NULL ## NSE/code check
   if (!requireNamespace("brms", quietly=TRUE)) {
       stop("can't tidy brms objects without brms installed")
@@ -235,8 +243,28 @@ tidy.brmsfit <- function(x, parameters = NA,
           term = sapply(ss2, termfun)
         )
     }
+
+    ## nice, but needs to be done outside averaging loop ...
+    ##   meltfun <- function(a) {
+          
+    ##     dd <- as.data.frame(ftable(a)) |>  
+    ##         setNames(c("level", "var", "term", "value")) |>
+    ##         tidyr::pivot_wider(names_from = var, values_from = value) |>
+    ##         rename(estimate = "Estimate",
+    ##                std.error = "Est.Error",
+    ##                ## FIXME: not robust to changing levels
+    ##                conf.low = "Q2.5",
+    ##                conf.high = "Q97.5")
+    ##   }
+          
+
+    ## ## purrr:::map_dfr(ranef(x), meltfun, .id = "group")
+
+    ## if ("ran_coefs" %in% effects) {
+    ##     res_list$ran_coefs <- purrr:::map_dfr(coef(x), meltfun, .id = "group")
+    ## }
     if ("ran_vals" %in% effects) {
-      rterms <- grep(mkRE(prefs$ran_vals), terms, value = TRUE)
+    rterms <- grep(mkRE(prefs$ran_vals), terms, value = TRUE)
 
       vals <- stringr::str_match_all(rterms, "_(.+?)\\[(.+?),(.+?)\\]")
 
@@ -259,10 +287,12 @@ tidy.brmsfit <- function(x, parameters = NA,
     }
     v <- if (fixed.only) seq(nrow(out)) else is.na(out$term)
     newterms <- stringr::str_remove(terms[v], mkRE(prefs[c("fixed")]))
-    if (fixed.only) {
-      out$term <- newterms
-    } else {
-      out$term[v] <- newterms
+    if (length(newterms)>0) { 
+      if (fixed.only) {
+        out$term <- newterms
+      } else {
+        out$term[v] <- newterms
+      }
     }
     if (is.multiresp) {
         out$response <- response

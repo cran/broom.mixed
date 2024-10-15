@@ -4,6 +4,7 @@ library(knitr)
 ## ----dwplot1,message=FALSE,warning=FALSE--------------------------------------
 library(dplyr)
 library(tidyr)
+require(rstan) ## workaround for r-devel problem
 library(broom.mixed)
 if (require("brms") && require("dotwhisker") && require("ggplot2")) {
     L <- load(system.file("extdata", "brms_example.rda", package="broom.mixed"))
