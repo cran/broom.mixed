@@ -1,7 +1,7 @@
 Package: broom.mixed
 Type: Package
 Title: Tidying Methods for Mixed Models
-Version: 0.2.9.6
+Version: 0.2.9.7
 Authors@R: c(
     person("Ben", "Bolker", email = "bolker@mcmaster.ca",
         role = c("aut", "cre"),
@@ -39,37 +39,40 @@ Description: Convert fitted objects from various R mixed-model packages
     coefficients of a regression; augment(), which adds columns to the original
     data such as predictions, residuals and cluster assignments; and glance(), which
     provides a one-row summary of model-level statistics.
-Imports: broom, coda, dplyr, forcats, methods, nlme, purrr, stringr,
-        tibble, tidyr, furrr
+Imports: broom, coda (>= 0.19-4.1), dplyr, forcats, methods, nlme,
+        purrr, stringr, tibble, tidyr, furrr
 Suggests: brms, dotwhisker, knitr, testthat, gamlss, gamlss.data,
         ggplot2, GLMMadaptive, glmmADMB, glmmTMB, lmerTest, lme4,
-        Matrix, MCMCglmm, mediation, mgcv, ordinal, pander, pbkrtest,
-        posterior, rstan, rstanarm, rstantools, R2jags, TMB, rmarkdown
+        Matrix, MCMCglmm, mediation, mgcv, mice, ordinal, pander,
+        pbkrtest, posterior, rstan, rstanarm, rstantools, R2jags, TMB,
+        rmarkdown
 URL: https://github.com/bbolker/broom.mixed
 BugReports: https://github.com/bbolker/broom.mixed/issues
 License: GPL-3
 Encoding: UTF-8
 Additional_repositories: http://bbolker.github.io/drat
 VignetteBuilder: knitr
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 NeedsCompilation: no
-Packaged: 2024-10-14 13:17:45 UTC; bolker
-Author: Ben Bolker [aut, cre] (<https://orcid.org/0000-0002-2127-0443>),
+Packaged: 2026-02-16 21:59:45 UTC; bolker
+Author: Ben Bolker [aut, cre] (ORCID: <https://orcid.org/0000-0002-2127-0443>),
   David Robinson [aut],
   Dieter Menne [ctb],
   Jonah Gabry [ctb],
   Paul Buerkner [ctb],
   Christopher Hua [ctb],
-  William Petry [ctb] (<https://orcid.org/0000-0002-5230-5987>),
-  Joshua Wiley [ctb] (<https://orcid.org/0000-0002-0271-6702>),
+  William Petry [ctb] (ORCID: <https://orcid.org/0000-0002-5230-5987>),
+  Joshua Wiley [ctb] (ORCID: <https://orcid.org/0000-0002-0271-6702>),
   Patrick Kennedy [ctb],
-  Eduard Szöcs [ctb] (<https://orcid.org/0000-0001-5376-1194>, BASF SE),
+  Eduard Szöcs [ctb] (ORCID: <https://orcid.org/0000-0001-5376-1194>,
+    sponsor: BASF SE),
   Indrajeet Patil [ctb],
-  Vincent Arel-Bundock [ctb] (<https://orcid.org/0000-0003-2042-7063>),
+  Vincent Arel-Bundock [ctb] (ORCID:
+    <https://orcid.org/0000-0003-2042-7063>),
   Bill Denney [ctb],
   Cory Brunson [ctb],
-  Joe Wasserman [ctb] (<https://orcid.org/0000-0002-9705-1853>),
+  Joe Wasserman [ctb] (ORCID: <https://orcid.org/0000-0002-9705-1853>),
   Alexey Stukalov [ctb],
   Matthieu Bruneaux [ctb]
 Repository: CRAN
-Date/Publication: 2024-10-15 22:20:02 UTC
+Date/Publication: 2026-02-17 06:11:05 UTC
